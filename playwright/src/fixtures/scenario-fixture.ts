@@ -1,18 +1,11 @@
-import { KubernetesClient } from '@/clients/kubernetes-client';
 import { CheckupsPage } from '@/page-objects/checkups-page';
-import { OverviewPage } from '@/page-objects/overview-page';
-import { VirtualMachinesPage } from '@/page-objects/virtual-machines-page';
 import { EnvVariables } from '@/utils/env-variables';
-import { getStorageStatePath } from '@/utils/file-utils';
 import { logger } from '@/utils/logger';
-import { TestConfigManager } from '@/utils/test-config';
+import { getStorageStatePath } from '@/utils/storage-state';
 import { test as base, expect } from '@playwright/test';
 
 interface ScenarioFixtures {
   checkupsPage: CheckupsPage;
-  k8sClient: KubernetesClient;
-  overviewPage: OverviewPage;
-  virtualMachinesPage: VirtualMachinesPage;
 }
 
 interface AutoFixtures {
@@ -22,7 +15,7 @@ interface AutoFixtures {
 export const scenarioTest = base.extend<ScenarioFixtures & AutoFixtures>({
   storageState: async ({}, use) => {
     const kubeConfigPath = process.env.KUBECONFIG || '.kubeconfigs/test-config';
-    await use(getStorageStatePath(kubeConfigPath, true) ?? undefined);
+    await use(getStorageStatePath(kubeConfigPath) ?? undefined);
   },
 
   // ── Auto-fixture: navigate to Virtualization perspective ────────────
@@ -91,26 +84,8 @@ export const scenarioTest = base.extend<ScenarioFixtures & AutoFixtures>({
     { auto: true },
   ],
 
-  // ── Page objects ────────────────────────────────────────────────────
-
   checkupsPage: async ({ page }, use) => {
     await use(new CheckupsPage(page));
-  },
-
-  k8sClient: async ({}, use) => {
-    const config = TestConfigManager.getConfig();
-    const kubeConfigPath =
-      config.kubeConfigPath || process.env.KUBECONFIG || '.kubeconfigs/test-config';
-    const client = new KubernetesClient(kubeConfigPath);
-    await use(client);
-  },
-
-  overviewPage: async ({ page }, use) => {
-    await use(new OverviewPage(page));
-  },
-
-  virtualMachinesPage: async ({ page }, use) => {
-    await use(new VirtualMachinesPage(page));
   },
 });
 

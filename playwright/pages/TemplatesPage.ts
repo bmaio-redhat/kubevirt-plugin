@@ -65,7 +65,7 @@ export class TemplatesPage extends ResourceListPage {
   }
 
   /** @param ns Specific namespace, or omit / pass 'all-namespaces' for all namespaces view. */
-  async navigate(ns?: string) {
+  override async navigate(ns?: string) {
     const nsPath = ns && ns !== 'all-namespaces' ? `ns/${ns}` : 'all-namespaces';
     await super.navigate(`/k8s/${nsPath}/templates.openshift.io~v1~Template`);
   }

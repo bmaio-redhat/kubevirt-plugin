@@ -247,13 +247,13 @@ export class InstanceTypesPage extends ResourceListPage {
     await this.page.getByText('User InstanceTypes', { exact: true }).click();
   }
 
-  async navigate() {
+  override async navigate() {
     await super.navigate(urls.instanceTypes());
   }
 }
 
 export class BootableVolumesPage extends ResourceListPage {
-  async navigate(ns?: string) {
+  override async navigate(ns?: string) {
     await super.navigate(urls.bootableVolumes(ns ?? env.osImagesNamespace));
   }
 
@@ -265,7 +265,7 @@ export class BootableVolumesPage extends ResourceListPage {
 }
 
 export class MigrationPoliciesPage extends ResourceListPage {
-  async navigate() {
+  override async navigate() {
     await super.navigate(urls.migrationPolicies());
   }
 }
@@ -275,7 +275,7 @@ export class CheckupsPage extends ResourceListPage {
     await expect(this.page.getByText(NO_STORAGE_CHECKUPS_TEXT)).toBeVisible();
   }
 
-  async navigate() {
+  override async navigate() {
     await this.page.goto(urls.checkups(env.cnvNamespace), { waitUntil: 'domcontentloaded' });
     // Wait for the heading which is always rendered (even in empty state)
     await this.page.getByRole('heading', { name: 'Checkups' }).waitFor({ timeout: NAV_TIMEOUT });
@@ -298,7 +298,7 @@ export class StorageClassesPage extends ResourceListPage {
     await expect(this.row(scName).getByText('Default')).toBeVisible();
   }
 
-  async navigate() {
+  override async navigate() {
     await super.navigate(urls.storageClasses());
     await this.waitForFirstDataRow();
   }

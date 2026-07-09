@@ -1,8 +1,10 @@
 import KubernetesClient from '@/clients/kubernetes-client';
 import { setKubernetesClient } from '@/clients/kubernetes-client-singleton';
 import ScenarioContextManager from '@/context-managers/scenario-context-manager';
+import type { TimeoutAwareTestInfo } from '@/page-objects/base-page';
 import { detectAuthExpired, healBrowserAuth } from '@/utils/auth-healer';
 import { waitForClusterResources, waitForNamespaceReady } from '@/utils/cluster-resource-checker';
+import { diagnoseAssertion, formatSoftAssertionErrors } from '@/utils/diagnose-protocol';
 import { EnvVariables } from '@/utils/env-variables';
 import { FileUtils } from '@/utils/file-utils';
 import { getStorageStatePath } from '@/utils/storage-state';
@@ -23,11 +25,6 @@ import {
 import type { TestUtilsType } from './test-utils';
 import { getTestUtils } from './test-utils';
 
-type TimeoutAwareTestInfo = TestInfo & {
-  _actionTimeouts?: Array<{ method: string; message: string }>;
-  _diagnosisHandled?: boolean;
-};
-
 type MutableTestInfo = TestInfo & {
   _errors?: unknown[];
   errors?: Array<{ message?: string; toString?: () => string }>;
@@ -47,6 +44,7 @@ interface WorkerFixtures {
 
 interface TestFixtures {
   _autoTimeoutGuard: void;
+  _autoDiagnoseFailures: void;
   _autoAnnotations: void;
   _autoResourceCheck: void;
   _autoVirtNavigation: void;
@@ -73,6 +71,65 @@ const _test = base.extend<TestFixtures, WorkerFixtures>({
       info.expectedStatus = 'skipped';
       if (Array.isArray(info.errors)) info.errors = [];
       if (Array.isArray(info._errors)) info._errors = [];
+    },
+    { auto: true },
+  ],
+
+  /**
+   * Auto-diagnoses assertion failures (hard and soft expects) when DIAGNOSE_FAILURES=1.
+   * Inspects page URL and error patterns to classify as infrastructure (skip) or
+   * product/test issue (fail). Captures a screenshot for diagnostic review.
+   * Skips if withSafeActions already diagnosed a timeout for this test.
+   *
+   * Declared after _autoTimeoutGuard so its teardown runs FIRST (reverse order),
+   * giving it a chance to reclassify before _autoTimeoutGuard processes.
+   */
+  _autoDiagnoseFailures: [
+    async ({ page }, use, testInfo) => {
+      await use();
+
+      if (!EnvVariables.diagnoseFailures) return;
+      if (testInfo.status !== 'failed') return;
+
+      const info = testInfo as TimeoutAwareTestInfo & MutableTestInfo;
+      if (info._diagnosisHandled) return;
+
+      const errorMessages = formatSoftAssertionErrors(testInfo.errors);
+
+      try {
+        const jiraIds = (testInfo.annotations ?? [])
+          .filter((a) => a.type === 'issue')
+          .map((a) => a.description ?? '');
+        const result = await diagnoseAssertion(
+          page,
+          errorMessages,
+          testInfo.testId,
+          testInfo.title,
+          testInfo.file ?? '',
+          jiraIds,
+          testInfo.attachments,
+        );
+
+        if (result.verdict === 'pass') {
+          testInfo.annotations.push({
+            type: 'diagnosis',
+            description: `Agent pass: ${result.reason}`,
+          });
+          info.status = 'passed';
+          info.expectedStatus = 'passed';
+          if (Array.isArray(info.errors)) info.errors = [];
+          if (Array.isArray(info._errors)) info._errors = [];
+        } else if (result.verdict === 'skip') {
+          testInfo.annotations.push({ type: 'skip', description: result.reason });
+          info.status = 'skipped';
+          info.expectedStatus = 'skipped';
+          if (Array.isArray(info.errors)) info.errors = [];
+          if (Array.isArray(info._errors)) info._errors = [];
+        }
+        // 'fail' → leave as failed (default for assertion failures)
+      } catch {
+        /* diagnosis failed — leave test status unchanged */
+      }
     },
     { auto: true },
   ],

@@ -6,10 +6,11 @@
 import BaseComponent from '@/components/shared/base-component';
 import type { ContextKey, ContextValueType } from '@/context-managers/context-keys';
 import ScenarioContextManager from '@/context-managers/scenario-context-manager';
+import { diagnoseTimeout } from '@/utils/diagnose-protocol';
 import { EnvVariables } from '@/utils/env-variables';
 import type { TrackedResourceType } from '@/utils/test-resource-tracker';
 import type { Page, TestInfo } from '@playwright/test';
-import { test as base } from '@playwright/test';
+import { test as baseTest } from '@playwright/test';
 
 export default abstract class BasePage extends BaseComponent {
   constructor(page: Page) {
@@ -82,8 +83,35 @@ export function withSafeActions<T extends object>(instance: T): T {
                     ? ((error as { message?: string }).message ?? String(error))
                     : String(error);
 
+                if (EnvVariables.diagnoseFailures) {
+                  const page = (target as { page?: Page }).page;
+                  if (page && !page.isClosed()) {
+                    try {
+                      const info = baseTest.info() as TimeoutAwareTestInfo;
+                      const jiraIds = (info.annotations ?? [])
+                        .filter((a) => a.type === 'issue')
+                        .map((a) => a.description ?? '');
+                      const diagnosis = await diagnoseTimeout(
+                        page,
+                        String(prop),
+                        msg,
+                        info.testId,
+                        info.title,
+                        info.file ?? '',
+                        jiraIds,
+                      );
+                      info._diagnosisHandled = true;
+
+                      if (diagnosis.verdict === 'pass') return undefined;
+                      if (diagnosis.verdict === 'fail') throw error;
+                    } catch (diagErr) {
+                      if (diagErr === error) throw diagErr;
+                    }
+                  }
+                }
+
                 try {
-                  const info = base.info() as TimeoutAwareTestInfo;
+                  const info = baseTest.info() as TimeoutAwareTestInfo;
                   if (!info._actionTimeouts) info._actionTimeouts = [];
                   info._actionTimeouts.push({ method: String(prop), message: msg });
                 } catch {

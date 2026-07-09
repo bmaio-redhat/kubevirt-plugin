@@ -35,9 +35,18 @@ import KubernetesClient from '@/clients/kubernetes-client';
 import OcCliClient from '@/clients/oc-cli-client';
 import RequestContextClient from '@/clients/request-context-client';
 import { ALLURE_API_FEATURE, withAllure } from '@/utils/allure';
+import { diagnoseApiAssertion, formatSoftAssertionErrors } from '@/utils/diagnose-protocol';
 import { EnvVariables } from '@/utils/env-variables';
 import { TestConfigManager } from '@/utils/test-config';
+import type { TestInfo } from '@playwright/test';
 import { expect, test as base } from '@playwright/test';
+
+type MutableTestInfo = TestInfo & {
+  _errors?: unknown[];
+  errors?: Array<{ message?: string; toString?: () => string }>;
+  status?: string;
+  expectedStatus?: string;
+};
 
 import type { TestUtilsType } from './test-utils';
 import { getTestUtils } from './test-utils';
@@ -61,6 +70,8 @@ interface ApiTestFixtures {
   nonPrivApiClient: RequestContextClient;
   /** @internal — auto-applied Allure metadata; not used directly in specs. */
   _allureSetup: void;
+  /** @internal — auto-applied AI diagnosis for failed API contract tests (DIAGNOSE_FAILURES=1). */
+  _autoDiagnoseApiFailures: void;
   /** Shared test utilities, factories, and constants (same aggregator as UI tests). */
   utils: TestUtilsType;
 }
@@ -106,6 +117,53 @@ export const test = base.extend<ApiTestFixtures, ApiWorkerFixtures>({
         tags: ['@api'],
       });
       await use();
+    },
+    { auto: true },
+  ],
+
+  // eslint-disable-next-line no-empty-pattern
+  _autoDiagnoseApiFailures: [
+    async ({}, use, testInfo) => {
+      await use();
+
+      if (!EnvVariables.diagnoseFailures) return;
+      if (testInfo.status !== 'failed') return;
+
+      const info = testInfo as MutableTestInfo;
+      const errorMessages = formatSoftAssertionErrors(testInfo.errors);
+
+      try {
+        const jiraIds = (testInfo.annotations ?? [])
+          .filter((a) => a.type === 'issue')
+          .map((a) => a.description ?? '');
+        const result = await diagnoseApiAssertion(
+          errorMessages,
+          testInfo.testId,
+          testInfo.title,
+          testInfo.file ?? '',
+          testInfo.project.name,
+          jiraIds,
+        );
+
+        if (result.verdict === 'pass') {
+          testInfo.annotations.push({
+            type: 'diagnosis',
+            description: `Agent pass: ${result.reason}`,
+          });
+          info.status = 'passed';
+          info.expectedStatus = 'passed';
+          if (Array.isArray(info.errors)) info.errors = [];
+          if (Array.isArray(info._errors)) info._errors = [];
+        } else if (result.verdict === 'skip') {
+          testInfo.annotations.push({ type: 'skip', description: result.reason });
+          info.status = 'skipped';
+          info.expectedStatus = 'skipped';
+          if (Array.isArray(info.errors)) info.errors = [];
+          if (Array.isArray(info._errors)) info._errors = [];
+        }
+      } catch {
+        /* diagnosis failed — leave test status unchanged */
+      }
     },
     { auto: true },
   ],

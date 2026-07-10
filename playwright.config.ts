@@ -1,13 +1,15 @@
 import * as path from 'path';
 
-import { defineConfig, devices } from '@playwright/test';
 import * as dotenv from 'dotenv';
 
 dotenv.config({ path: path.resolve(__dirname, '.env'), quiet: true });
 
-import { env } from './playwright/utils/env';
+import type { ReporterDescription } from '@playwright/test';
+import { defineConfig, devices } from '@playwright/test';
 
-export const baseURL = env.baseURL;
+import { EnvVariables } from './playwright/src/utils/env-variables';
+import { getStorageStatePath } from './playwright/src/utils/storage-state';
+import { getTestResultsDir } from './playwright/src/utils/test-results-dir';
 
 const chromeArgs = [
   '--ignore-certificate-errors',
@@ -28,140 +30,174 @@ const chromeArgs = [
   ...(process.env.DIAGNOSE_FAILURES === '1' ? ['--remote-debugging-port=0'] : []),
 ];
 
-const migrationUse = {
-  ...devices['Desktop Chrome'],
-  launchOptions: {
-    args: chromeArgs,
-    headless: !process.env.DEBUG_MODE && !process.env.HEADED,
-  },
-  viewport: { height: 1080, width: 1920 },
-};
+const testResultsDir = getTestResultsDir(__dirname);
+
+function getReporterConfig(resultsDir: string): ReporterDescription[] {
+  const allureReporter: ReporterDescription = [
+    path.resolve(__dirname, 'playwright', 'src', 'utils', 'allure-no-stdout-reporter.ts'),
+    { detail: true, resultsDir, suiteTitle: true },
+  ];
+
+  if (EnvVariables.isDebugMode) {
+    return [['list']];
+  }
+
+  if (EnvVariables.isSharded) {
+    const junitFile = path.resolve(
+      __dirname,
+      'junit-results',
+      `junit-shard-${EnvVariables.shardIndex}.xml`,
+    );
+    return [allureReporter, ['junit', { outputFile: junitFile }]];
+  }
+
+  const junitFile = path.resolve(__dirname, 'junit-results', 'junit.xml');
+  return [['list'], allureReporter, ['junit', { outputFile: junitFile }]];
+}
 
 export default defineConfig({
-  expect: { timeout: 60_000 },
-  forbidOnly: !!process.env.CI,
-  fullyParallel: false,
-  globalSetup:
-    process.env.USE_SCENARIO_INFRA === 'true'
-      ? './playwright/project-dependencies/global.setup.ts'
-      : undefined,
-  globalTeardown:
-    process.env.USE_SCENARIO_INFRA === 'true'
-      ? './playwright/project-dependencies/global.teardown.ts'
-      : undefined,
-  outputDir: './playwright/test-results/artifacts',
-  projects: [
-    // ── Legacy projects (setup → gating → features) ──────────────────
-    {
-      fullyParallel: false,
-      name: 'setup',
-      testDir: './playwright/tests/setup',
-      use: {
-        ...devices['Desktop Chrome'],
-        launchOptions: {
-          args: chromeArgs,
-          headless: !process.env.DEBUG_MODE && !process.env.HEADED,
-        },
-        viewport: { height: 1080, width: 1920 },
-      },
-    },
-    {
-      dependencies: ['setup'],
-      fullyParallel: false,
-      name: 'gating',
-      testDir: './playwright/tests/gating',
-      use: {
-        ...devices['Desktop Chrome'],
-        launchOptions: {
-          args: chromeArgs,
-          headless: !process.env.DEBUG_MODE && !process.env.HEADED,
-        },
-        storageState: 'playwright/.auth/session.json',
-        viewport: { height: 1080, width: 1920 },
-      },
-    },
-    ...(process.env.RUN_FEATURE_TESTS === 'true'
-      ? [
-          {
-            dependencies: ['setup'],
-            fullyParallel: false,
-            name: 'features',
-            retries: 2,
-            testDir: './playwright/tests/features',
-            use: {
-              ...devices['Desktop Chrome'],
-              launchOptions: {
-                args: chromeArgs,
-                headless: !process.env.DEBUG_MODE && !process.env.HEADED,
-              },
-              storageState: 'playwright/.auth/session.json',
-              viewport: { height: 1080, width: 1920 },
-            },
-          },
-        ]
-      : []),
+  forbidOnly: EnvVariables.isCI,
+  fullyParallel: true,
 
-    // ── Migration projects (use global setup/teardown) ───────────────
+  globalSetup: path.resolve(__dirname, 'playwright', 'project-dependencies', 'global.setup.ts'),
+  globalTeardown: path.resolve(
+    __dirname,
+    'playwright',
+    'project-dependencies',
+    'global.teardown.ts',
+  ),
+
+  projects: [
     {
-      fullyParallel: true,
-      name: 'migration-gating',
-      retries: 0,
-      testDir: './playwright/tests/migration-gating',
-      use: migrationUse,
+      name: 'Gating',
+      testMatch: '**/tests/gating/**/*.spec.ts',
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 1920, height: 1080 },
+        launchOptions: {
+          args: chromeArgs,
+          headless: !EnvVariables.isDebugMode && !process.env.HEADED,
+        },
+      },
     },
     {
-      fullyParallel: true,
-      name: 'migration-tier1',
-      retries: 0,
-      testDir: './playwright/tests/migration-tier1',
-      use: migrationUse,
+      name: 'Tier 1',
+      testMatch: '**/tests/tier1/**/*.spec.ts',
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 1920, height: 1080 },
+        launchOptions: {
+          args: chromeArgs,
+          headless: !EnvVariables.isDebugMode && !process.env.HEADED,
+        },
+      },
     },
     {
-      fullyParallel: true,
-      name: 'migration-tier2',
-      retries: 0,
-      testDir: './playwright/tests/migration-tier2',
-      use: migrationUse,
+      name: 'Migrations',
+      testMatch: '**/tests/migrations/**/*.spec.ts',
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 1920, height: 1080 },
+        launchOptions: {
+          args: chromeArgs,
+          headless: !EnvVariables.isDebugMode && !process.env.HEADED,
+        },
+      },
     },
     {
-      fullyParallel: true,
-      name: 'migration-nonpriv',
-      retries: 0,
-      testDir: './playwright/tests/migration-nonpriv',
-      use: migrationUse,
+      name: 'Tier 2',
+      testMatch: '**/tests/tier2/**/*.spec.ts',
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 1920, height: 1080 },
+        launchOptions: {
+          args: chromeArgs,
+          headless: !EnvVariables.isDebugMode && !process.env.HEADED,
+        },
+      },
     },
     {
-      fullyParallel: true,
-      name: 'migration-migrations',
-      retries: 0,
-      testDir: './playwright/tests/migration-migrations',
-      use: migrationUse,
+      name: 'CNV Settings',
+      testMatch: '**/tests/settings/**/*.spec.ts',
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 1920, height: 1080 },
+        launchOptions: {
+          args: chromeArgs,
+          headless: !EnvVariables.isDebugMode && !process.env.HEADED,
+        },
+      },
     },
     {
-      fullyParallel: true,
-      name: 'migration-settings',
-      retries: 0,
-      testDir: './playwright/tests/migration-settings',
-      use: migrationUse,
+      name: 'Non-Priv',
+      testMatch: '**/tests/nonpriv/**/*.spec.ts',
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 1920, height: 1080 },
+        launchOptions: {
+          args: chromeArgs,
+          headless: !EnvVariables.isDebugMode && !process.env.HEADED,
+        },
+      },
+    },
+    {
+      name: 'API Tests',
+      testMatch: '**/tests/api/**/*.spec.ts',
+      testIgnore: '**/tests/api/nonpriv-api.spec.ts',
+      use: {
+        baseURL: EnvVariables.webConsoleUrl,
+        actionTimeout: 15 * 1000,
+        navigationTimeout: 15 * 1000,
+        ignoreHTTPSErrors: true,
+      },
+    },
+    {
+      name: 'Non-Priv API',
+      testMatch: '**/tests/api/nonpriv-api.spec.ts',
+      use: {
+        baseURL: EnvVariables.webConsoleUrl,
+        actionTimeout: 15 * 1000,
+        navigationTimeout: 15 * 1000,
+        ignoreHTTPSErrors: true,
+      },
     },
   ],
-  reporter: [
-    ['list'],
-    ['junit', { outputFile: './playwright/test-results/results.xml' }],
-    ['html', { open: 'never', outputFolder: './playwright/test-results/html-report' }],
-  ],
-  retries: process.env.CI ? 1 : 0,
-  timeout: 480 * 1000,
-  use: {
-    actionTimeout: 60_000,
-    baseURL,
-    headless: process.env.HEADLESS !== 'false',
-    ignoreHTTPSErrors: true,
-    navigationTimeout: 120_000,
-    screenshot: 'only-on-failure',
-    trace: 'retain-on-failure',
-    video: 'retain-on-failure',
-    viewport: { height: 1080, width: 1920 },
+  reporter: getReporterConfig(testResultsDir),
+
+  retries: EnvVariables.retries,
+
+  expect: {
+    timeout: EnvVariables.isNonPrivUser ? 45 * 1000 : 30 * 1000,
   },
-  workers: process.env.WORKERS ? parseInt(process.env.WORKERS, 10) : 4,
+
+  testDir: './playwright/tests',
+
+  testMatch: '**/*.spec.ts',
+
+  outputDir: testResultsDir,
+
+  timeout: 480 * 1000,
+
+  use: {
+    baseURL: EnvVariables.webConsoleUrl,
+    storageState: getStorageStatePath(path.resolve(__dirname, 'playwright')),
+
+    screenshot: 'off',
+    trace: 'off',
+    video: 'off',
+
+    actionTimeout: 60 * 1000,
+    navigationTimeout: 90 * 1000,
+    ignoreHTTPSErrors: true,
+
+    launchOptions: {
+      slowMo: 0,
+    },
+  },
+
+  workers: (() => {
+    if (process.env.WORKERS) return parseInt(process.env.WORKERS, 10);
+    if (EnvVariables.isCI) return 1;
+    return undefined;
+  })(),
 });

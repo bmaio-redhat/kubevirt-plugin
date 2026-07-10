@@ -5,26 +5,13 @@ on:
   workflow_dispatch:
     inputs:
       test_project:
-        description: Test project/suite to run (gating, or the features/tier1 equivalent)
+        description: Playwright project to run
         required: true
         default: gating
         type: choice
         options:
           - gating
           - features
-      test_engine:
-        description: |
-          E2E test engine to run against the checked-out code. Defaults to
-          playwright -- there's no base branch to auto-detect from outside
-          hot-cluster-e2e.yml's pull_request_target path, so set this
-          explicitly to cypress when manually testing a release-4.22-or-
-          earlier ref.
-        required: false
-        default: playwright
-        type: choice
-        options:
-          - playwright
-          - cypress
       runner_label:
         description: ARC runner label (defaults to kubevirt-plugin-ci)
         required: false
@@ -32,52 +19,16 @@ on:
         type: string
       cluster_name:
         description: Cluster name for run tagging (defaults to runner_label)
-        required: false
-        default: ''
-        type: string
-      checkout_ref:
-        description: |
-          Ref/SHA to check out for the code under test. Leave empty for the
-          default (PR head SHA, or the triggering ref for a plain manual
-          run). Set to refs/pull/<N>/merge to test a PR merged with the
-          current base tip instead of the PR's head commit in isolation
-          (used by hot-cluster-e2e.yml's pr_number retest path).
-        required: false
-        default: ''
-        type: string
-      progress_status_sha:
-        description: |
-          Commit SHA to post the "Running gating tests" progress status
-          against once the actual test command starts (passed by
-          hot-cluster-e2e.yml). Leave empty to skip -- e.g. a standalone
-          workflow_dispatch test run of this file alone.
-        required: false
-        default: ''
-        type: string
-      progress_status_context:
-        description: |
-          Commit-status context name to post the above under. Must match
-          hot-cluster-e2e.yml's "Hot Cluster E2E Progress" naming
-          convention (including its manual-dispatch variant) -- see that
-          workflow's progress-check-running-tests job.
         required: false
         default: ''
         type: string
   workflow_call:
     inputs:
       test_project:
-        description: Test project/suite to run (gating, or the features/tier1 equivalent)
+        description: Playwright project to run
         type: string
         required: false
         default: gating
-      test_engine:
-        description: |
-          E2E test engine to run against the checked-out code (playwright or
-          cypress). See hot-cluster-e2e.yml's resolve-cluster-config job for
-          how this is auto-detected from the target branch.
-        type: string
-        required: false
-        default: playwright
       runner_label:
         description: ARC runner label (defaults to kubevirt-plugin-ci)
         type: string
@@ -85,48 +36,6 @@ on:
         default: ''
       cluster_name:
         description: Cluster name for run tagging (defaults to runner_label)
-        type: string
-        required: false
-        default: ''
-      checkout_ref:
-        description: |
-          Ref/SHA to check out for the code under test. Leave empty for the
-          default (PR head SHA, or the triggering ref for a plain manual
-          run). Set to refs/pull/<N>/merge to test a PR merged with the
-          current base tip instead of the PR's head commit in isolation
-          (used by hot-cluster-e2e.yml's pr_number retest path).
-        type: string
-        required: false
-        default: ''
-      is_reusable_call:
-        description: |
-          Internal marker set only by hot-cluster-e2e.yml's own `uses:` call
-          -- never available on the workflow_dispatch trigger, so it's
-          reliably false for a standalone dispatch. Distinguishes that case
-          (whose "Run Gating Tests" job would otherwise be a top-level,
-          bare-named check-run that can collide with an unrelated open PR
-          sharing the same SHA -- confirmed live on CNV-92682/PR #4293) from
-          being called via `uses:` (where GitHub already composite-prefixes
-          the check name, e.g. "Run E2E Tests / Run Gating Tests", so no
-          collision is possible regardless of this flag).
-        type: boolean
-        required: false
-        default: false
-      progress_status_sha:
-        description: |
-          Commit SHA to post the "Running gating tests" progress status
-          against once the actual test command starts (passed by
-          hot-cluster-e2e.yml). Leave empty to skip -- e.g. a standalone
-          workflow_dispatch test run of this file alone.
-        type: string
-        required: false
-        default: ''
-      progress_status_context:
-        description: |
-          Commit-status context name to post the above under. Must match
-          hot-cluster-e2e.yml's "Hot Cluster E2E Progress" naming
-          convention (including its manual-dispatch variant) -- see that
-          workflow's progress-check-running-tests job.
         type: string
         required: false
         default: ''
@@ -134,7 +43,6 @@ on:
 permissions:
   contents: read
   actions: read
-  statuses: write
 
 env:
   CNV_NS: openshift-cnv
@@ -285,23 +193,11 @@ jobs:
     outputs:
       kubevirt-plugin-image: ${{ env.KUBEVIRT_PLUGIN_IMAGE }}
     steps:
-      # inputs.checkout_ref (set to refs/pull/<N>/merge for the main-push
-      # retest path in hot-cluster-e2e.yml) takes priority over the PR's own
-      # head SHA -- see the checkout_ref input above for why: testing the
-      # merge with the current base tip, not the PR's isolated head commit.
       - name: Checkout
         uses: actions/checkout@v7
         with:
-          ref: ${{ inputs.checkout_ref || github.event.pull_request.head.sha || github.ref }}
+          ref: ${{ github.event.pull_request.head.sha || github.ref }}
           allow-unsafe-pr-checkout: true
-          # This job's token now carries statuses: write (see
-          # hot-cluster-e2e.yml's run-e2e-tests job) -- persisting it to
-          # .git/config would let PR-controlled code checked out below
-          # (e.g. a malicious test-suite change) read it straight off
-          # disk and post arbitrary commit statuses repo-wide. Checkout
-          # itself doesn't need the credential to persist afterward (no
-          # further git operations happen in this job).
-          persist-credentials: false
 
       - name: Check if kubevirt-plugin image exists in registry
         id: check_image
@@ -350,10 +246,7 @@ jobs:
           podman push ${KUBEVIRT_PLUGIN_IMAGE}
 
   run-gating-tests:
-    # inputs.is_reusable_call is only ever true when hot-cluster-e2e.yml
-    # calls this workflow via `uses:` -- see that input's own description
-    # for why a standalone dispatch needs a distinctly-named check here.
-    name: ${{ inputs.is_reusable_call && 'Run Gating Tests' || 'Run Gating Tests (standalone dispatch)' }}
+    name: Playwright Gating Tests
     needs: [check-runner, build-kubevirt-plugin-image]
     runs-on: ${{ inputs.runner_label || 'kubevirt-plugin-ci' }}
     timeout-minutes: 120
@@ -361,79 +254,29 @@ jobs:
       PLUGIN_IMAGE: ${{ needs.build-kubevirt-plugin-image.outputs.kubevirt-plugin-image }}
       HEADLESS: 'true'
       RUN_FEATURE_TESTS: ${{ inputs.test_project == 'features' && 'true' || 'false' }}
-      # Both playwright/fixtures/ and cypress/fixtures/ have a matching
-      # layout, so the engine name doubles as the fixtures directory name.
-      TEST_ENGINE: ${{ inputs.test_engine || 'playwright' }}
-      # Cypress's frozen release-branch test content (predates the
-      # Playwright migration) hardcodes fixed resource names that the
-      # dynamic per-run values below can't reach on every branch:
-      #   - release-4.20's cypress/utils/const/index.ts hardcodes
-      #     TEST_NS = 'auto-test-ns' as a literal string -- no mechanism
-      #     to read Cypress.env('TEST_NS') at all (release-4.21/4.22
-      #     already read it dynamically, so this is a no-op override
-      #     for them, not a fix).
-      #   - release-4.20's TEST_SECRET_NAME is likewise hardcoded to
-      #     'auto-test-secret', matching cypress/fixtures/secret.yaml's
-      #     own hardcoded metadata.name (release-4.21/4.22 already read
-      #     Cypress.env('TEST_SECRET_NAME') dynamically).
-      # CYPRESS_TEST_NS/CYPRESS_TEST_SECRET_NAME are exported from these
-      # further down but were never consumed by release-4.20's frozen
-      # code -- override both here to match instead. Playwright keeps
-      # the dynamic per-run values from the workflow-level env: above.
-      TEST_NS: ${{ (inputs.test_engine || 'playwright') == 'cypress' && 'auto-test-ns' || format('kubevirt-plugin-ci-test-{0}', github.run_id) }}
-      TEST_SECRET_NAME: ${{ (inputs.test_engine || 'playwright') == 'cypress' && 'auto-test-secret' || 'ci-test-secret' }}
 
     steps:
-      # See the build-kubevirt-plugin-image job's Checkout step above --
-      # same checkout_ref precedence, so the image build and the test run
-      # always test the identical tree.
       - name: Checkout
         uses: actions/checkout@v7
         with:
-          ref: ${{ inputs.checkout_ref || github.event.pull_request.head.sha || github.ref }}
+          ref: ${{ github.event.pull_request.head.sha || github.ref }}
           allow-unsafe-pr-checkout: true
-          # This job's token now carries statuses: write (see
-          # hot-cluster-e2e.yml's run-e2e-tests job) -- persisting it to
-          # .git/config would let PR-controlled code checked out below
-          # (e.g. a malicious test-suite change) read it straight off
-          # disk and post arbitrary commit statuses repo-wide. Checkout
-          # itself doesn't need the credential to persist afterward (no
-          # further git operations happen in this job).
-          persist-credentials: false
 
-      # Referenced by owner/repo/path@main rather than the local ./ path --
-      # checkout_ref can point at a release branch that predates this CI
-      # infra entirely (e.g. release-4.22 and earlier, before hot-cluster
-      # CI existed), so the composite action wouldn't exist in the checked-
-      # out tree. Both ci-env-request and ci-env-release are self-contained
-      # (pure oc/kubectl commands against the already-running ci-env-
-      # controller, no other local file references), so pinning to main
-      # here is safe regardless of what's checked out above.
       - name: Provision CI test environment
         id: ci-env
-        uses: kubevirt-ui/kubevirt-plugin/.github/actions/ci-env-request@main
+        uses: ./.github/actions/ci-env-request
         with:
           plugin-image: ${{ env.PLUGIN_IMAGE }}
           test-namespace: ${{ env.TEST_NS }}
           configmap-name: ${{ env.CI_ENV_CM }}
           ci-env-namespace: ${{ env.CI_ENV_NS }}
-          # configmap only for Cypress: its before-all hook has no way to
-          # dismiss OpenShift Console's own "Welcome to the new OpenShift
-          # experience" guided-tour modal (unlike Playwright, which already
-          # seeds tour-completion into browser localStorage via
-          # seedGuidedTourState() -- see playwright/pages/LoginPage.ts).
-          # Left empty for Playwright so its console keeps the chart's
-          # default (localstorage) and that existing seeding keeps working
-          # unchanged. See the "Seed kubevirt-user-settings ConfigMap" step
-          # below for the matching server-side seed.
-          user-settings-location: ${{ env.TEST_ENGINE == 'cypress' && 'configmap' || '' }}
 
       - name: Create test secret
         run: |
           yq e '
             .metadata.name = strenv(TEST_SECRET_NAME) |
             .metadata.namespace = strenv(TEST_NS)
-          ' "${TEST_ENGINE}/fixtures/secret.yaml" | oc apply -f -
+          ' playwright/fixtures/secret.yaml | oc apply -f -
 
       - name: Seed kubevirt-user-settings ConfigMap
         run: |
@@ -461,120 +304,26 @@ jobs:
           oc patch configmap kubevirt-ui-features -n "${CNV_NS}" --type=merge \
             --patch '{"data":{"advancedSearch":"true","treeViewFolders":"true"}}'
 
-          # Only meaningful when TEST_ENGINE=cypress (see "Provision CI test
-          # environment" step above, which only sets user-settings-location=
-          # configmap for that engine) -- Playwright's console stays on
-          # localstorage and keeps working via its own browser-side
-          # seedGuidedTourState(), so this ConfigMap wouldn't even be read
-          # for a Playwright run. Seeds core OpenShift Console's own
-          # guided-tour completion state so the "Welcome to the new
-          # OpenShift experience" intro modal (a core console feature, not
-          # kubevirt-plugin's own onboarding above) never blocks the very
-          # first Cypress test. Mirrors playwright/pages/LoginPage.ts's
-          # seedGuidedTourState(), adapted for configmap instead of
-          # localStorage. ConfigMap name convention (user-settings-<uid>)
-          # per openshift/console's getConfigMapName() -- verify live if
-          # this ever silently stops working, since the naming convention
-          # has evolved across console versions.
-          if [[ "${TEST_ENGINE}" == "cypress" && -n "${SA_UID}" ]]; then
-            GUIDED_TOUR='{"admin":{"completed":true},"dev":{"completed":true},"virtualization-perspective":{"completed":true}}'
-            CONSOLE_CM_NAME="user-settings-${SA_UID}"
-
-            if ! oc get configmap "${CONSOLE_CM_NAME}" -n openshift-console-user-settings &>/dev/null; then
-              oc create configmap "${CONSOLE_CM_NAME}" -n openshift-console-user-settings
-            fi
-            oc patch configmap "${CONSOLE_CM_NAME}" -n openshift-console-user-settings \
-              --type merge -p "$(jq -cn --arg v "${GUIDED_TOUR}" '{data: {"console.guidedTour": $v}}')"
-          fi
-
       - name: Install dependencies
         run: |
           npm ci --ignore-scripts --no-audit
+          npm run playwright-install
 
-          if [[ "${TEST_ENGINE}" == "cypress" ]]; then
-            # --ignore-scripts above skips Cypress's normal postinstall
-            # binary download, so fetch it explicitly.
-            npx cypress install
-          else
-            npm run playwright-install
-          fi
-
-      # Best-effort follow-up to hot-cluster-e2e.yml's own progress-check-
-      # running-tests job, which already posted "Building plugin image"
-      # against the same SHA/context before this reusable workflow even
-      # started (that checkpoint covers check-runner + build-kubevirt-
-      # plugin-image + everything up to here). Only hot-cluster-e2e.yml's
-      # `uses:` call ever sets progress_status_sha -- a standalone
-      # workflow_dispatch of this file alone leaves it empty, so this is
-      # a no-op then.
-      - name: Update progress status
-        if: inputs.progress_status_sha != '' && inputs.progress_status_context != ''
-        continue-on-error: true
-        uses: actions/github-script@v9
-        env:
-          STATUS_SHA: ${{ inputs.progress_status_sha }}
-          STATUS_CONTEXT: ${{ inputs.progress_status_context }}
-        with:
-          script: |
-            await github.rest.repos.createCommitStatus({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              sha: process.env.STATUS_SHA,
-              context: process.env.STATUS_CONTEXT,
-              state: 'pending',
-              description: 'Running gating tests',
-              target_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
-            });
-
-      - name: Run gating tests
+      - name: Run Playwright tests
         env:
           BRIDGE_BASE_ADDRESS: ${{ steps.ci-env.outputs.bridge-base-address }}
-          TEST_PROJECT: ${{ inputs.test_project }}
         run: |
-          if [[ "${TEST_ENGINE}" == "cypress" ]]; then
-            # Cypress only auto-exposes env vars to Cypress.env(...) when
-            # they carry the CYPRESS_ prefix (or via an explicit --env
-            # flag) -- the plain TEST_NS/OS_IMAGES_NS/CNV_NS/
-            # TEST_SECRET_NAME already set at the job level (used by
-            # Playwright and the oc/bash steps directly) are invisible to
-            # the test code's Cypress.env('TEST_NS') etc. otherwise.
-            export CYPRESS_TEST_NS="${TEST_NS}"
-            export CYPRESS_OS_IMAGES_NS="${OS_IMAGES_NS}"
-            export CYPRESS_CNV_NS="${CNV_NS}"
-            export CYPRESS_TEST_SECRET_NAME="${TEST_SECRET_NAME}"
-
-            # release-4.20/4.21's cy.patchVM/cy.stopVM (support/
-            # commands.ts) run `oc patch virtualmachine <name>` with no
-            # -n flag at all, relying on the runner's current oc context
-            # namespace (release-4.22 passes -n explicitly, so this is a
-            # no-op there). That context otherwise points wherever the
-            # runner's kubeconfig happens to default (not TEST_NS), so
-            # those bare oc calls 404 even though the VM exists --
-            # confirmed live: the "Create customized VMs..." suite's
-            # `after` hook failed with `virtualmachines.kubevirt.io
-            # "vm-it-custom" not found` (CNV-92682 follow-up). Point the
-            # runner's current project at TEST_NS so they resolve.
-            oc project "${TEST_NS}"
-            if [[ "${TEST_PROJECT}" == "features" ]]; then
-              npm run test-cypress-headless -- --spec tests/tier1.cy.ts
-            else
-              npm run test-cypress-headless -- --spec tests/gating.cy.ts
-            fi
-          else
-            if [[ "${TEST_PROJECT}" == "features" ]]; then
-              npm run test-playwright-headless -- --project=features
-            else
-              npm run test-playwright-headless -- --project=gating
-            fi
-          fi
+          npm run test-playwright-headless -- --project="${{ inputs.test_project || 'Gating' }}"
 
       - name: Upload test artifacts
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: ${{ env.TEST_ENGINE }}-results-${{ github.run_id }}
+          name: playwright-results-${{ github.run_id }}
           path: |
-            ${{ env.TEST_ENGINE == 'cypress' && 'cypress/gui-test-screenshots/' || 'playwright/test-results/' }}
+            allure-results/
+            test-results/
+            junit-results/
           retention-days: 7
           if-no-files-found: ignore
 
@@ -617,15 +366,11 @@ jobs:
         if: always()
         run: |
           echo "Cleaning test entities in ${TEST_NS}..."
-          # Fetched from main rather than run from the checked-out tree --
-          # same reasoning as the ci-env-request/ci-env-release uses:
-          # below, this script may not exist on whatever checkout_ref was
-          # used (e.g. a pre-hot-cluster-CI release branch).
-          curl -sL "https://raw.githubusercontent.com/kubevirt-ui/kubevirt-plugin/main/ci-scripts/hot-cluster/test-cleanup.sh" | bash
+          bash ci-scripts/hot-cluster/test-cleanup.sh
 
       - name: Release CI test environment
         if: always()
-        uses: kubevirt-ui/kubevirt-plugin/.github/actions/ci-env-release@main
+        uses: ./.github/actions/ci-env-release
         with:
           configmap-name: ${{ env.CI_ENV_CM }}
           ci-env-namespace: ${{ env.CI_ENV_NS }}

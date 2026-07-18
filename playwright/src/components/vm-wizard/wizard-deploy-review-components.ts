@@ -219,9 +219,7 @@ export class VmCreationWizardDeploymentComponent extends BaseComponent {
     name: /Create from Template/,
   });
 
-  private readonly _generateVmNameButton = this.locator(
-    '.vm-creation-wizard [data-test="generate-vm-name-button"]',
-  );
+  private readonly _generateVmNameButton = this.locator('.vm-creation-wizard').getByTestId('generate-vm-name-button');
   private readonly _newVmRadio = this.page.getByRole('radio', {
     name: /Custom configuration/,
   });
@@ -300,9 +298,11 @@ export class VmCreationWizardDeploymentComponent extends BaseComponent {
 
   async openWizardFromCreateDropdown(): Promise<void> {
     await this.collapseSidebarIfExpanded();
-    const createButton = this.locator(
-      'button[aria-label="Create VirtualMachine"], [data-test="item-create"].pf-m-primary, .pf-m-primary > [data-test="item-create"], [data-test="vms-treeview"] [data-test="item-create"]',
-    ).first();
+    const createButton = this.locator('button[aria-label="Create VirtualMachine"]')
+      .or(this.testId('item-create').and(this.locator('.pf-m-primary')))
+      .or(this.locator('.pf-m-primary').getByTestId('item-create'))
+      .or(this.testId('vms-treeview').getByTestId('item-create'))
+      .first();
     await createButton.waitFor({ state: 'visible', timeout: TestTimeouts.UI_ELEMENT_VISIBILITY });
     await this.robustClick(createButton);
     await this._wizardContainer.first().waitFor({

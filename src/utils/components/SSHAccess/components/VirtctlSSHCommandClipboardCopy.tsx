@@ -34,7 +34,6 @@ const VirtctlSSHCommandClipboardCopy: FC<VirtctlSSHCommandClipboardCopyProps> = 
   return (
     <ClipboardCopy
       clickTip={t('Copied')}
-      data-test="ssh-over-virtctl"
       hoverTip={t('Copy to clipboard')}
     >
       {getConsoleVirtctlCommand(vm)}

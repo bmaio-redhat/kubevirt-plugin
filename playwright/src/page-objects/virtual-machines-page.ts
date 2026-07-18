@@ -15,9 +15,9 @@ export class VirtualMachinesPage {
 
   constructor(private readonly page: Page) {
     this.heading = page.locator('h1').filter({ hasText: 'VirtualMachines' }).first();
-    this.createBtn = page.locator('[data-test="item-create"]');
-    this.nameFilter = page.locator('[data-test="name-filter-input"]');
-    this.vmListTab = page.locator('[data-test="vm-list-tab"]');
+    this.createBtn = page.getByTestId('item-create');
+    this.nameFilter = page.getByTestId('name-filter-input');
+    this.vmListTab = page.getByTestId('vm-list-tab');
   }
 
   async filterByName(name: string): Promise<void> {

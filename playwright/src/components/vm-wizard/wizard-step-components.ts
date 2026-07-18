@@ -49,9 +49,7 @@ export class VmCreationWizardLocationComponent extends BaseComponent {
     folderCombobox: boolean;
   }> {
     return {
-      projectDropdown: await this.locator(
-        '.pf-v6-c-wizard [data-test="namespace-dropdown-menu-toggle"]',
-      )
+      projectDropdown: await this.locator('.pf-v6-c-wizard').getByTestId('namespace-dropdown-menu-toggle')
         .first()
         .isVisible({ timeout: TestTimeouts.SHORT_WAIT })
         .catch(() => false),
@@ -75,7 +73,7 @@ export class VmCreationWizardLocationComponent extends BaseComponent {
   }
 
   async verifyNoHeaderProjectSelector(): Promise<boolean> {
-    const headerSelector = this.locator('[data-test-id="namespace-bar-dropdown"]');
+    const headerSelector = this.testId('namespace-bar-dropdown');
     try {
       await headerSelector.waitFor({ state: 'visible', timeout: 3000 });
       return false;
@@ -195,11 +193,11 @@ export class VmCreationWizardComputeComponent extends BaseComponent {
 
   /**
    * Clicks a row in the User provided instance type table matching the given name.
-   * The row is a clickable <tr> containing a resource name cell with data-test-id="${name}".
+   * The row is a clickable <tr> containing a resource name cell with data-test="${name}".
    */
   async selectUserProvidedInstanceTypeByName(name: string): Promise<void> {
     const row = this.locator('tbody tr.pf-m-clickable').filter({
-      has: this.locator(`[data-test-id="${name}"]`),
+      has: this.testId(name),
     });
     await row.first().waitFor({ state: 'visible', timeout: TestTimeouts.UI_ELEMENT_VISIBILITY });
     await this.robustClick(row.first());
@@ -272,15 +270,13 @@ export class VmCreationWizardComputeComponent extends BaseComponent {
 }
 
 export class VmCreationWizardBootSourceComponent extends BaseComponent {
-  private readonly _dialogModalTabModal = this.locator('[data-test="dialog-modal"], #tab-modal');
+  private readonly _dialogModalTabModal = this.testId('dialog-modal').or(this.locator('#tab-modal'));
 
   private readonly _noBootSource = this.locator('text=No boot source');
   private readonly _pfV6CWizardAddVolumeBtn = this.locator(
     '.pf-v6-c-wizard button:has-text("Add volume")',
   );
-  private readonly _pfV6CWizardInputnameFilterInput = this.locator(
-    '.pf-v6-c-wizard input[data-test="name-filter-input"]',
-  );
+  private readonly _pfV6CWizardInputnameFilterInput = this.locator('.pf-v6-c-wizard').getByTestId('name-filter-input');
   private readonly _pfV6CWizardTableTbodyTr = this.locator('.pf-v6-c-wizard table tbody tr');
   constructor(page: Page) {
     super(page);
@@ -288,7 +284,7 @@ export class VmCreationWizardBootSourceComponent extends BaseComponent {
 
   async cancelAddVolumeModal(): Promise<void> {
     const dialog = this._dialogModalTabModal;
-    const cancelButton = dialog.locator('[data-test="cancel-button"]');
+    const cancelButton = dialog.getByTestId('cancel-button');
     await cancelButton.waitFor({ state: 'visible', timeout: TestTimeouts.UI_ELEMENT_VISIBILITY });
     await this.robustClick(cancelButton);
   }
@@ -306,7 +302,7 @@ export class VmCreationWizardBootSourceComponent extends BaseComponent {
    */
   async getAddVolumeModalSaveButtonText(): Promise<string> {
     const dialog = this._dialogModalTabModal;
-    const saveButton = dialog.locator('[data-test="save-button"]');
+    const saveButton = dialog.getByTestId('save-button');
     await saveButton.waitFor({ state: 'visible', timeout: TestTimeouts.UI_ELEMENT_VISIBILITY });
     return (await saveButton.textContent())?.trim() ?? '';
   }
@@ -393,7 +389,7 @@ export class VmCreationWizardBootSourceComponent extends BaseComponent {
    */
   async isAddVolumeModalSaveButtonDisabled(): Promise<boolean> {
     const dialog = this._dialogModalTabModal;
-    const saveButton = dialog.locator('[data-test="save-button"]');
+    const saveButton = dialog.getByTestId('save-button');
     await saveButton.waitFor({ state: 'visible', timeout: TestTimeouts.UI_ELEMENT_VISIBILITY });
     return await saveButton.isDisabled();
   }
@@ -424,8 +420,8 @@ export class VmCreationWizardBootSourceComponent extends BaseComponent {
 
   async isBootVolumeOsFilterVisible(): Promise<boolean> {
     try {
-      const osFilter = this.locator(
-        '.pf-v6-c-wizard [data-test="os-filter"], .pf-v6-c-wizard [data-test-row-filter="operating-system"]',
+      const osFilter = this.locator('.pf-v6-c-wizard').getByTestId('os-filter').or(
+        this.locator('.pf-v6-c-wizard [data-test-row-filter="operating-system"]'),
       );
       return await osFilter
         .first()

@@ -41,7 +41,6 @@ const WindowsDownloadUrlField: FC<WindowsDownloadUrlFieldProps> = ({
           trigger={showDownloadUrlTooltip ? 'mouseenter focus' : 'manual'}
         >
           <TextInput
-            data-test="win-image-download-url-input"
             id="win-image-download-url"
             isDisabled={isDownloadUrlDisabled}
             name="win-image-download-url"

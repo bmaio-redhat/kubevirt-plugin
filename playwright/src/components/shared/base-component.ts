@@ -22,12 +22,17 @@ export default class BaseComponent {
     '.pf-v6-c-spinner',
     '.pf-c-spinner',
     '.pf-v5-c-spinner',
-    '[data-test="loading"]',
-    '[data-test-id="loading-indicator"]',
     '.co-m-loader',
     '.loading-skeleton',
     '[class*="skeleton"]',
   ];
+
+  private get _loadingLocator(): Locator {
+    return this.page
+      .locator(this.loadingIndicators.join(', '))
+      .or(this.page.getByTestId('loading'))
+      .or(this.page.getByTestId('loading-indicator'));
+  }
 
   protected readonly _deleteConfirmationButton = this.locator(
     '[role="dialog"] button.pf-m-danger:has-text("Delete")',
@@ -115,11 +120,14 @@ export default class BaseComponent {
   }
 
   async clickCreateAndSelectOption(
-    createButtonSelector = '[data-test="item-create"]',
+    createButtonSelectorOrLocator: string | Locator = this.testId('item-create'),
     optionSelector: string,
     waitForDropdown = true,
   ): Promise<void> {
-    const createButton = this.locator(createButtonSelector);
+    const createButton =
+      typeof createButtonSelectorOrLocator === 'string'
+        ? this.locator(createButtonSelectorOrLocator)
+        : createButtonSelectorOrLocator;
     await this.robustClick(createButton);
 
     if (waitForDropdown) {
@@ -139,7 +147,7 @@ export default class BaseComponent {
   }
 
   async clickDialogSaveButton(): Promise<void> {
-    const dialogSaveButton = this.locator('[role="dialog"] [data-test="save-button"]');
+    const dialogSaveButton = this.locator('[role="dialog"]').getByTestId('save-button');
     await dialogSaveButton.waitFor({ state: 'visible', timeout: TestTimeouts.UI_ACTION_COMPLETE });
     await this.robustClick(dialogSaveButton);
   }
@@ -178,18 +186,19 @@ export default class BaseComponent {
   }
 
   async clickSaveByTestId(): Promise<void> {
-    const saveButton = this.locator('[data-test="save-button"]');
+    const saveButton = this.testId('save-button');
     await this.robustClick(saveButton);
   }
 
   async clickSaveChanges(): Promise<void> {
-    const saveChangesButton = this.locator('[data-test="save-changes"]');
+    const saveChangesButton = this.testId('save-changes');
     await this.robustClick(saveChangesButton);
   }
 
   async clickTemplateByTestId(templateTestId: string, templateSelector?: string): Promise<void> {
-    const selector = templateSelector ?? `[data-test-id="${templateTestId}"]`;
-    const templateCard = this.locator(selector);
+    const templateCard = templateSelector
+      ? this.locator(templateSelector)
+      : this.testId(templateTestId);
     await this.robustClick(templateCard, { waitForState: 'attached' });
   }
 
@@ -216,9 +225,7 @@ export default class BaseComponent {
 
   protected async isPageStable(): Promise<boolean> {
     try {
-      const loadingSelector = this.loadingIndicators.join(', ');
-      const hasLoading = await this.page
-        .locator(loadingSelector)
+      const hasLoading = await this._loadingLocator
         .first()
         .isVisible({ timeout: TestTimeouts.UI_DELAY_SHORT })
         .catch(() => false);
@@ -239,6 +246,10 @@ export default class BaseComponent {
     },
   ) {
     return this.page.locator(selectorText, options);
+  }
+
+  protected testId(id: string) {
+    return this.page.getByTestId(id);
   }
 
   async navigateToTab(
@@ -366,7 +377,7 @@ export default class BaseComponent {
     try {
       await this.waitForLoadingComplete(Math.min(timeout / 2, TestTimeouts.UI_DELAY_MEDIUM));
 
-      const createButton = this.locator('[data-test="item-create"]');
+      const createButton = this.testId('item-create');
       let pageLoaded = includeCreateButton ? createButton : null;
 
       if (indicatorSelectors.length > 0) {
@@ -495,8 +506,7 @@ export default class BaseComponent {
   }
 
   protected async waitForLoadingComplete(timeout = TestTimeouts.UI_DELAY_MEDIUM): Promise<void> {
-    const loadingSelector = this.loadingIndicators.join(', ');
-    const loadingElements = this.page.locator(loadingSelector);
+    const loadingElements = this._loadingLocator;
 
     try {
       const count = await loadingElements.count().catch(() => 0);
@@ -509,10 +519,13 @@ export default class BaseComponent {
   }
 
   async waitForTemplateForm(
-    formInputSelector = '[data-test-id="template-catalog-vm-name-input"]',
+    formInputSelectorOrLocator: string | Locator = this.testId('template-catalog-vm-name-input'),
     timeout = TestTimeouts.UI_VISIBILITY_QUICK,
   ): Promise<void> {
-    const formInput = this.locator(formInputSelector);
+    const formInput =
+      typeof formInputSelectorOrLocator === 'string'
+        ? this.locator(formInputSelectorOrLocator)
+        : formInputSelectorOrLocator;
     await formInput.waitFor({ state: 'visible', timeout });
   }
 }

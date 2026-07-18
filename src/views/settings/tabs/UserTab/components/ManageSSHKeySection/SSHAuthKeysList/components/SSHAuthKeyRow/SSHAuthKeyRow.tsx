@@ -86,7 +86,7 @@ const SSHAuthKeyRow: FC<SSHAuthKeyRowProps> = ({
               value: opt,
             }))}
             toggleProps={{
-              'data-test-id': 'select-project-toggle',
+              'data-test': 'select-project-toggle',
               isFullWidth: true,
             }}
             placeholder={t('Select project')}
@@ -98,7 +98,7 @@ const SSHAuthKeyRow: FC<SSHAuthKeyRowProps> = ({
         )}
       </GridItem>
       <GridItem span={1} />
-      <GridItem className="ssh-auth-row__edit-button" data-test="configure-ssh-key" span={5}>
+      <GridItem className="ssh-auth-row__edit-button" span={5}>
         <AddProjectAuthKeyButton
           cluster={cluster}
           onSubmit={onSubmit}

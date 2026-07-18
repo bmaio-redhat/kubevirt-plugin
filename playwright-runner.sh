@@ -1,14 +1,13 @@
 #!/usr/bin/env bash
 # ────────────────────────────────────────────────────────────────────────────
-# playwright-runner.sh — Run migration Playwright projects for kubevirt-plugin
+# playwright-runner.sh — Run Playwright projects for kubevirt-plugin
 #
 # Usage:
 #   ./playwright-runner.sh [project] [extra-args...]
 #
 # Examples:
-#   ./playwright-runner.sh migration-gating
-#   ./playwright-runner.sh migration-tier1 --workers=2
-#   ./playwright-runner.sh migration-nonpriv --headed
+#   ./playwright-runner.sh Gating
+#   ./playwright-runner.sh suite --workers=4
 #   ./playwright-runner.sh all
 # ────────────────────────────────────────────────────────────────────────────
 set -euo pipefail
@@ -52,12 +51,8 @@ if [[ -z "${PROJECT}" ]]; then
   echo "  Tier1                  Tier 1 specs (scenario infrastructure)"
   echo "  Tier2                  Tier 2 specs (scenario infrastructure)"
   echo "  Settings               Settings specs (scenario infrastructure)"
-  echo "  migration-gating       Migration gating specs"
-  echo "  migration-tier1        Migration tier 1 specs"
-  echo "  migration-tier2        Tier 2 specs"
-  echo "  migration-nonpriv      Non-privileged user specs"
-  echo "  migration-migrations   Migration specs"
-  echo "  migration-settings     Settings specs"
+  echo "  API                    API contract tests (browserless)"
+  echo "  suite                  Run Gating + Tier1 + Tier2 together"
   echo "  all                    Run all projects"
   exit 1
 fi
@@ -74,18 +69,18 @@ detect_urls
 
 EXTRA_ARGS=("$@")
 
-if [[ "${PROJECT}" == "all" ]]; then
+PROJECT_LOWER=$(echo "${PROJECT}" | tr '[:upper:]' '[:lower:]')
+
+if [[ "${PROJECT_LOWER}" == "suite" ]]; then
+  echo "🚀 Running suite: Gating + Tier1 + Tier2..."
+  npx playwright test --project Gating --project Tier1 --project Tier2 "${EXTRA_ARGS[@]}"
+elif [[ "${PROJECT_LOWER}" == "all" ]]; then
   PROJECTS=(
     Gating
     Tier1
     Tier2
     Settings
-    migration-gating
-    migration-tier1
-    migration-tier2
-    migration-nonpriv
-    migration-migrations
-    migration-settings
+    API
   )
   PROJECT_ARGS=()
   for p in "${PROJECTS[@]}"; do

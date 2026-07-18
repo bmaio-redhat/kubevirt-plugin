@@ -135,7 +135,6 @@ const CPUMemoryModal: FC<CPUMemoryModalProps> = ({ isOpen, onClose, onSubmit, te
             setMemory(defaultMemorySize);
             setMemoryUnit(defaultMemoryUnit);
           }}
-          data-test="restore-button"
           isDisabled={isTemplateEditable}
           key="default"
           variant={ButtonVariant.secondary}

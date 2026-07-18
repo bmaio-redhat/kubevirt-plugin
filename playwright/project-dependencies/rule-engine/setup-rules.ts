@@ -384,46 +384,6 @@ export function getSetupRules(): SetupRule[] {
       },
     },
     {
-      id: 'set-default-storage-class',
-      name: 'Set default StorageClass for VirtualMachines',
-      phase: SetupPhase.CLUSTER,
-      guard: () => !EnvVariables.isHcE2e && !EnvVariables.isNonPrivUser,
-      onError: 'warn',
-      run: async (ctx) => {
-        const apiClient = ctx.apiClient;
-        if (!apiClient) {
-          throw new Error('RequestContextClient not initialized');
-        }
-        const defaultVmStorageClass = EnvVariables.storageClass;
-        logger.info(
-          `📦 Setting default StorageClass for VirtualMachines: ${defaultVmStorageClass}...`,
-        );
-
-        const scList = await apiClient.getStorageClasses();
-        for (const sc of scList.items ?? []) {
-          const scName = sc.metadata?.name;
-          if (!scName) continue;
-          await apiClient.mergePatchResource('storage.k8s.io', 'v1', 'storageclasses', scName, {
-            metadata: {
-              annotations: { 'storageclass.kubevirt.io/is-default-virt-class': 'false' },
-            },
-          });
-        }
-        await apiClient.mergePatchResource(
-          'storage.k8s.io',
-          'v1',
-          'storageclasses',
-          defaultVmStorageClass,
-          {
-            metadata: {
-              annotations: { 'storageclass.kubevirt.io/is-default-virt-class': 'true' },
-            },
-          },
-        );
-        logger.success(`✓ Default for VirtualMachines set to ${defaultVmStorageClass}`);
-      },
-    },
-    {
       id: 'save-config',
       name: 'Persist shared test configuration',
       phase: SetupPhase.CLUSTER,
@@ -447,7 +407,7 @@ export function getSetupRules(): SetupRule[] {
     },
     {
       id: 'disable-sidebar-autohide',
-      name: 'Disable sidebar auto-hide in console user settings',
+      name: 'Disable sidebar auto-hide in user settings',
       phase: SetupPhase.CLUSTER,
       onError: 'warn',
       run: async (ctx) => {
@@ -460,31 +420,50 @@ export function getSetupRules(): SetupRule[] {
           ? EnvVariables.testUsername
           : 'kubeadmin';
         const settingsKey = consoleUsername === 'kubeadmin' ? 'kube-admin' : consoleUsername;
-        const configMapName = `user-settings-${settingsKey}`;
-        const namespace = 'openshift-console-user-settings';
 
-        const userPreferences = JSON.stringify({
+        // Patch console user settings (guided tour, welcome modals).
+        const consoleConfigMapName = `user-settings-${settingsKey}`;
+        const consoleNamespace = 'openshift-console-user-settings';
+        const consolePreferences = JSON.stringify({
           guidedTour: false,
-          navigation: { autoHideNav: false },
-          onboardingPopoversHidden: { catalog: true, createProject: true, vmsTab: true },
+          onboardingPopoversHidden: { catalog: true, createProject: true, navCollapse: true, vmsTab: true },
           quickStart: { activeQuickStartID: '', dontShowWelcomeModal: true },
         });
-
         try {
           await apiClient.mergePatchResource(
             '',
             'v1',
             'configmaps',
-            configMapName,
-            {
-              data: { [settingsKey]: userPreferences },
-            },
-            namespace,
+            consoleConfigMapName,
+            { data: { [settingsKey]: consolePreferences } },
+            consoleNamespace,
           );
-          logger.success(`✓ Sidebar auto-hide disabled for '${settingsKey}'`);
+          logger.success(`✓ Console user settings updated for '${settingsKey}'`);
         } catch {
           logger.info(
-            `ℹ ConfigMap ${configMapName} not found — sidebar settings will be applied on first console login`,
+            `ℹ ConfigMap ${consoleConfigMapName} not found — console settings will be applied on first login`,
+          );
+        }
+
+        // Patch KubeVirt plugin user settings (auto-hide nav).
+        const kubevirtSettings = JSON.stringify({
+          navigation: { autoHideNav: false },
+          onboardingPopoversHidden: { catalog: true, createProject: true, navCollapse: true, vmsTab: true },
+          quickStart: { dontShowWelcomeModal: true },
+        });
+        try {
+          await apiClient.mergePatchResource(
+            '',
+            'v1',
+            'configmaps',
+            'kubevirt-user-settings',
+            { data: { [settingsKey]: kubevirtSettings } },
+            ctx.cnvNamespace,
+          );
+          logger.success(`✓ KubeVirt sidebar auto-hide disabled for '${settingsKey}'`);
+        } catch {
+          logger.info(
+            `ℹ ConfigMap kubevirt-user-settings not found in ${ctx.cnvNamespace} — will use defaults`,
           );
         }
       },
@@ -531,7 +510,7 @@ export function getSetupRules(): SetupRule[] {
               navigation: { autoHideNav: false },
               quickStart: { dontShowWelcomeModal: true, activeQuickStartID: '' },
               guidedTour: false,
-              onboardingPopoversHidden: { vmsTab: true, catalog: true, createProject: true },
+              onboardingPopoversHidden: { catalog: true, createProject: true, navCollapse: true, vmsTab: true },
             });
           }
           await apiClient.mergePatchResource(

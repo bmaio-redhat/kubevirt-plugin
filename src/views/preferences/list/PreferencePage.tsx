@@ -101,7 +101,7 @@ const PreferencePage: FC<ListPageProps> = (props) => {
       >
         <Tab
           title={
-            <TabTitleText data-test="cluster-preferences-tab">
+            <TabTitleText>
               {t('Cluster Preferences')}
             </TabTitleText>
           }
@@ -111,7 +111,7 @@ const PreferencePage: FC<ListPageProps> = (props) => {
         </Tab>
         <Tab
           title={
-            <TabTitleText data-test="user-preferences-tab">{t('User Preferences')}</TabTitleText>
+            <TabTitleText>{t('User Preferences')}</TabTitleText>
           }
           eventKey={1}
         >

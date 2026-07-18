@@ -344,6 +344,25 @@ export class VirtualMachineProxyHandler {
     });
   }
 
+  async hotplugVolumeEphemeral(
+    namespace: string,
+    vmName: string,
+    volumeName: string,
+    diskName: string,
+  ): Promise<KubernetesResource | null> {
+    const path =
+      `/kubernetes/apis/subresources.kubevirt.io/v1/namespaces/${namespace}` +
+      `/virtualmachines/${vmName}/addvolume`;
+    return this.ctx._request('put', path, {
+      data: {
+        name: diskName,
+        disk: { disk: { bus: 'virtio' }, name: diskName },
+        volumeSource: { persistentVolumeClaim: { claimName: volumeName, hotpluggable: true } },
+      },
+      headers: { Accept: '*/*' },
+    });
+  }
+
   async isVmDiskPersistent(namespace: string, vmName: string, diskName: string): Promise<boolean> {
     const vm = await this.get(namespace, vmName);
     if (!vm) return false;

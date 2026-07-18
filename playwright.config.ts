@@ -84,49 +84,15 @@ export default defineConfig({
       use: migrationUse,
     },
 
-    // ── Migration projects (use global setup/teardown) ───────────────
+    // ── API contract tests (browserless, console proxy) ────────────────
     {
-      fullyParallel: true,
-      name: 'migration-gating',
+      fullyParallel: false,
+      name: 'API',
       retries: 0,
-      testDir: './playwright/tests/migration-gating',
+      testDir: './playwright/tests/api',
       use: migrationUse,
     },
-    {
-      fullyParallel: true,
-      name: 'migration-tier1',
-      retries: 0,
-      testDir: './playwright/tests/migration-tier1',
-      use: migrationUse,
-    },
-    {
-      fullyParallel: true,
-      name: 'migration-tier2',
-      retries: 0,
-      testDir: './playwright/tests/migration-tier2',
-      use: migrationUse,
-    },
-    {
-      fullyParallel: true,
-      name: 'migration-nonpriv',
-      retries: 0,
-      testDir: './playwright/tests/migration-nonpriv',
-      use: migrationUse,
-    },
-    {
-      fullyParallel: true,
-      name: 'migration-migrations',
-      retries: 0,
-      testDir: './playwright/tests/migration-migrations',
-      use: migrationUse,
-    },
-    {
-      fullyParallel: true,
-      name: 'migration-settings',
-      retries: 0,
-      testDir: './playwright/tests/migration-settings',
-      use: migrationUse,
-    },
+
   ],
   reporter: [
     ['list'],
@@ -140,6 +106,7 @@ export default defineConfig({
     baseURL,
     headless: process.env.HEADLESS !== 'false',
     ignoreHTTPSErrors: true,
+    testIdAttribute: 'data-test',
     navigationTimeout: 120_000,
     screenshot: 'only-on-failure',
     trace: 'off',

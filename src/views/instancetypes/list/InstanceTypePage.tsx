@@ -116,7 +116,7 @@ const InstanceTypePage: FC<ListPageProps> = (props) => {
       >
         <Tab
           title={
-            <TabTitleText data-test="cluster-instancetype-tab">
+            <TabTitleText>
               {t('Cluster InstanceTypes')}
             </TabTitleText>
           }
@@ -126,7 +126,7 @@ const InstanceTypePage: FC<ListPageProps> = (props) => {
         </Tab>
         <Tab
           title={
-            <TabTitleText data-test="user-instancetype-tab">{t('User InstanceTypes')}</TabTitleText>
+            <TabTitleText>{t('User InstanceTypes')}</TabTitleText>
           }
           eventKey={USER_INSTANCETYPE_TAB_INDEX}
         >

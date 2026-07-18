@@ -52,7 +52,7 @@ const GettingStartedSectionContents: FC<GettingStartedSectionContentsProps> = ({
       </Title>
 
       {description ? (
-        <Content component={ContentVariants.small} data-test="description">
+        <Content component={ContentVariants.small}>
           {description}
         </Content>
       ) : null}

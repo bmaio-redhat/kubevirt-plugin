@@ -182,11 +182,12 @@ export class InfraProxyHandler {
   async isStorageMigrationAvailable(): Promise<boolean> {
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
-        await this.ctx.listResources(
+        const result = await this.ctx.listResources(
           InfraProxyHandler._MIGRATION_GROUP,
           InfraProxyHandler._MIGRATION_VERSION,
           InfraProxyHandler._MIGRATION_PLAN_PLURAL,
         );
+        if (!result) throw new Error('listResources returned falsy');
         return true;
       } catch {
         if (attempt === 0) await new Promise((r) => setTimeout(r, 2_000));
@@ -322,16 +323,15 @@ export class InfraProxyHandler {
     expectedParallelMigrations: number,
     expectedPerCluster: number,
     namespace = 'openshift-cnv',
-    kubevirtName = 'kubevirt-kubevirt-hyperconverged',
+    hcoName = 'kubevirt-hyperconverged',
   ): Promise<{
     allMatch: boolean;
     actualParallelMigrations: number | null;
     actualPerCluster: number | null;
   }> {
-    const kv = await this.getKubeVirt(namespace, kubevirtName);
-    const spec = kv?.spec as Record<string, unknown> | undefined;
-    const virt = spec?.virtualization as Record<string, unknown> | undefined;
-    const config = virt?.liveMigrationConfig as Record<string, unknown> | undefined;
+    const hco = await this.getHyperConverged(namespace, hcoName);
+    const spec = hco?.spec as Record<string, unknown> | undefined;
+    const config = spec?.liveMigrationConfig as Record<string, unknown> | undefined;
     const actualParallelMigrations: number | null =
       (config?.parallelMigrationsPerCluster as number) ?? null;
     const actualPerCluster: number | null =

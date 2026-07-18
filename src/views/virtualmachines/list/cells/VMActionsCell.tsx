@@ -10,7 +10,7 @@ const VMActionsCell: FC<VMCellWithCallbacksProps> = ({ callbacks, row }) => {
   const [actions] = useVirtualMachineActionsProvider(row, vmim);
 
   return (
-    <VirtualMachineActions actions={actions} data-test="vm-row-actions" isKebabToggle vm={row} />
+    <VirtualMachineActions actions={actions} isKebabToggle vm={row} />
   );
 };
 

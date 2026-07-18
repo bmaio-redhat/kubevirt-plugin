@@ -33,7 +33,6 @@ export const GettingStartedGrid: FC<GettingStartedGridProps> = ({ children }) =>
   return (
     <Card
       className="kv-getting-started-grid"
-      data-test="getting-started"
       isExpanded={isExpanded}
       variant="secondary"
     >

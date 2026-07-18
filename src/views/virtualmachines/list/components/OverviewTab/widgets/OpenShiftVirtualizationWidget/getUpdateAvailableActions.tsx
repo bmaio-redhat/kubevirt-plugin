@@ -38,7 +38,6 @@ const UpdateAvailableAction: FC<UpdateAvailableActionProps> = ({
   return (
     <Link
       className="openshift-virtualization-widget__update-available"
-      data-test="openshift-virtualization-widget-update-available"
       to={operatorLink}
     >
       {t('Update available')}

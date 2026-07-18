@@ -8,9 +8,7 @@ export default class OverviewSettingsComponent extends BaseComponent {
     'button:has-text("Advanced CD-ROM features")',
   );
 
-  private readonly _advancedCdromFeaturesToggle = this.locator(
-    'input[data-test-id="advanced-cdrom-features"]',
-  );
+  private readonly _advancedCdromFeaturesToggle = this.testId('advanced-cdrom-features');
   private readonly _ariaWelcomeModal = this.locator('[aria-label="Welcome modal"]');
   private readonly _automaticImagesDownloadBtn = this.locator(
     'button:has-text("Automatic images download")',
@@ -21,16 +19,16 @@ export default class OverviewSettingsComponent extends BaseComponent {
   private readonly _automaticSubscriptionTypeMainButton = this.locator(
     '.AutomaticSubscriptionType--main button',
   );
-  private readonly _centosStream9ImageCronSwitch = this.locator(
-    '[data-test-id="centos-stream9-image-cron-auto-image-download-switch"]',
+  private readonly _centosStream9ImageCronSwitch = this.testId(
+    'centos-stream9-image-cron-auto-image-download-switch',
   );
   private readonly _divIdAutoUpdateRhelVmsInputpfV6CSwitchInput = this.locator(
     'div[id="auto-update-rhel-vms"] input.pf-v6-c-switch__input',
   );
   private readonly _generalSettingsButton = this.locator('button:has-text("General settings")');
   private readonly _guestManagementButton = this.locator('button:has-text("Guest management")');
-  private readonly _guestSystemLog = this.locator('[data-test-id="guest-system-log"]');
-  private readonly _hideCredentials = this.locator('[data-test-id="hide-credentials"]');
+  private readonly _guestSystemLog = this.testId('guest-system-log');
+  private readonly _hideCredentials = this.testId('hide-credentials');
   private readonly _idWelcomeModalCheckbox = this.locator('[id="welcome-modal-checkbox"]');
   private readonly _inputIdNodeAddress = this.locator('input[id="node-address"]');
   private readonly _kvTourPopoverKvTourPopoverHeader = this.locator(
@@ -45,7 +43,7 @@ export default class OverviewSettingsComponent extends BaseComponent {
   private readonly _nodePortFeatureInputTypeCheckbox = this.locator(
     '#node-port-feature input[type="checkbox"]',
   );
-  private readonly _passtUDNNetworkCheckbox = this.locator('[data-test-id="passtUDNNetwork"]');
+  private readonly _passtUDNNetworkCheckbox = this.testId('passtUDNNetwork');
   private readonly _pfV6CFormGroupsubscriptionLabel = this.locator(
     '.pf-v6-c-form__group.subscription-label',
   );
@@ -55,14 +53,14 @@ export default class OverviewSettingsComponent extends BaseComponent {
   private readonly _templatesAndImagesManagementBtn = this.locator(
     'button:has-text("Templates and images management")',
   );
-  private readonly _treeViewFolders = this.locator('[data-test-id="treeViewFolders"]');
+  private readonly _treeViewFolders = this.testId('treeViewFolders');
   private readonly _vmActionsConfirmationBtn = this.locator(
     'button:has-text("VirtualMachine actions confirmation")',
   );
   private readonly _vmActionsConfirmationToggle = this.locator(
     '[id="confirm-vm-actions"] [role="switch"]',
   );
-  private readonly _vmTemplates = this.locator('[data-test-id="vmTemplates"]');
+  private readonly _vmTemplates = this.testId('vmTemplates');
   private readonly _yAMLTabVisibilityBtn = this.locator('button:has-text("YAML tab visibility")');
   protected readonly nav = new NavigationComponent(this.page);
 
@@ -149,12 +147,15 @@ export default class OverviewSettingsComponent extends BaseComponent {
 
   async disableGuidedTour(): Promise<boolean> {
     try {
-      const guidedTourSwitch = this.locator('[data-test-id="guided-tour"]');
+      const guidedTourSwitch = this.testId('guided-tour');
       await guidedTourSwitch.waitFor({
         state: 'visible',
         timeout: TestTimeouts.DEFAULT,
       });
-      await guidedTourSwitch.uncheck({ force: true });
+      const isChecked = await guidedTourSwitch.isChecked().catch(() => true);
+      if (isChecked) {
+        await guidedTourSwitch.click({ force: true });
+      }
       await this.page.waitForTimeout(TestTimeouts.UI_STABILIZE);
       return true;
     } catch {
@@ -192,7 +193,7 @@ export default class OverviewSettingsComponent extends BaseComponent {
 
   async disableWelcomeInformation(): Promise<boolean> {
     try {
-      const welcomeInfoSwitch = this.locator('[data-test-id="welcome-information"]');
+      const welcomeInfoSwitch = this.testId('welcome-information');
       await welcomeInfoSwitch.waitFor({
         state: 'visible',
         timeout: TestTimeouts.DEFAULT,
@@ -247,12 +248,15 @@ export default class OverviewSettingsComponent extends BaseComponent {
 
   async enableGuidedTour(): Promise<boolean> {
     try {
-      const guidedTourSwitch = this.locator('[data-test-id="guided-tour"]');
+      const guidedTourSwitch = this.testId('guided-tour');
       await guidedTourSwitch.waitFor({
         state: 'visible',
         timeout: TestTimeouts.DEFAULT,
       });
-      await guidedTourSwitch.check({ force: true });
+      const isAlreadyChecked = await guidedTourSwitch.isChecked().catch(() => false);
+      if (!isAlreadyChecked) {
+        await guidedTourSwitch.click({ force: true });
+      }
       await this.page.waitForTimeout(TestTimeouts.UI_STABILIZE);
       return true;
     } catch {
@@ -345,7 +349,7 @@ export default class OverviewSettingsComponent extends BaseComponent {
 
   async enableWelcomeInformation(): Promise<boolean> {
     try {
-      const welcomeInfoSwitch = this.locator('[data-test-id="welcome-information"]');
+      const welcomeInfoSwitch = this.testId('welcome-information');
       await welcomeInfoSwitch.waitFor({
         state: 'visible',
         timeout: TestTimeouts.DEFAULT,
@@ -844,7 +848,7 @@ export default class OverviewSettingsComponent extends BaseComponent {
 
   async setHideYamlTab(enabled: boolean): Promise<boolean> {
     try {
-      const toggleLocator = this.locator('[data-test-id="hide-yaml-tab"]');
+      const toggleLocator = this.testId('hide-yaml-tab');
 
       const isCheckboxVisible = await toggleLocator
         .isVisible({ timeout: TestTimeouts.UI_ELEMENT_VISIBILITY })

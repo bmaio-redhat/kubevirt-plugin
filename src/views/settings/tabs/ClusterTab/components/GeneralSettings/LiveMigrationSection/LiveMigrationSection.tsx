@@ -21,6 +21,7 @@ const LiveMigrationSection: FC<LiveMigrationSectionProps> = ({ hyperConvergeConf
   return (
     <ExpandSection
       className="live-migration-tab"
+      dataTestID="live-migration"
       searchItemId={CLUSTER_TAB_IDS.liveMigration}
       toggleText={t('Live migration')}
     >

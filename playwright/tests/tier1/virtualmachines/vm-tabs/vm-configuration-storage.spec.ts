@@ -141,7 +141,7 @@ test.describe.serial(
       await apiClient.createBlankDataVolume(diskName, ns, '1Gi');
       apiClient.trackResource('DataVolume', diskName, ns);
       await apiClient.waitForDataVolumeSucceeded(diskName, ns);
-      await apiClient.hotplugVolumeToVm(vmName, ns, diskName, diskName);
+      await apiClient.hotplugVolumeEphemeral(vmName, ns, diskName, diskName);
       await apiClient.waitForVmDiskPresent(vmName, ns, diskName);
 
       await vmTreePage.navigateToVmViaTreeView(ns, vmName);
@@ -151,6 +151,17 @@ test.describe.serial(
       expect(diskVisible, 'Hotplugged disk should be visible on Configuration > Storage').toBe(
         true,
       );
+
+      const madePersistent = await vmDetailPage.makeDiskPersistent(diskName);
+      expect.soft(madePersistent, 'Make persistent action should succeed').toBe(true);
+
+      await expect
+        .poll(() => apiClient.isVmDiskPersistent(vmName, ns, diskName), {
+          timeout: 30_000,
+          intervals: [3_000],
+          message: 'Disk should be persistent after Make persistent action',
+        })
+        .toBe(true);
     });
   },
 );

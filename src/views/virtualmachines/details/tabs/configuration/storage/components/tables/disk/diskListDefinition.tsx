@@ -61,7 +61,7 @@ export const getDiskListColumns = (
     key: 'size',
     label: t('Size'),
     renderCell: (row) => (
-      <span data-test-id={`disk-size-${row.name}`}>
+      <span data-test={`disk-size-${row.name}`}>
         {readableSizeUnit(row.size) ?? NO_DATA_DASH}
       </span>
     ),
@@ -72,7 +72,7 @@ export const getDiskListColumns = (
     key: 'drive',
     label: t('Drive'),
     renderCell: (row) => (
-      <span data-test-id={`disk-drive-${row.name}`}>{row.drive ?? NO_DATA_DASH}</span>
+      <span data-test={`disk-drive-${row.name}`}>{row.drive ?? NO_DATA_DASH}</span>
     ),
     sortable: true,
   },
@@ -81,7 +81,7 @@ export const getDiskListColumns = (
     key: 'interface',
     label: t('Interface'),
     renderCell: (row) => (
-      <span data-test-id={`disk-interface-${row.name}`}>{row.interface ?? NO_DATA_DASH}</span>
+      <span data-test={`disk-interface-${row.name}`}>{row.interface ?? NO_DATA_DASH}</span>
     ),
     sortable: true,
   },
@@ -90,7 +90,7 @@ export const getDiskListColumns = (
     key: 'storage-class',
     label: t('Storage class'),
     renderCell: (row) => (
-      <span data-test-id={`disk-storage-class-${row.name}`}>
+      <span data-test={`disk-storage-class-${row.name}`}>
         {row.storageClass ?? NO_DATA_DASH}
       </span>
     ),

@@ -91,7 +91,6 @@ const EnvironmentFormActions: FC<EnvironmentFormActionsProps> = ({
             {t('Save')}
           </Button>
           <Button
-            data-test="reload-button"
             onClick={onReload}
             type="button"
             variant={ButtonVariant.secondary}

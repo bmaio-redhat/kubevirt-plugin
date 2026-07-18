@@ -31,7 +31,6 @@ const AlertStatusItem: FC<AlertStatusItemProps> = ({ alertDetails, alertType }) 
         <div className="alert-item__message">
           <div
             className="alert-item__header alert-item__text pf-v6-u-text-color-subtle"
-            data-test="timestamp"
           >
             <span className="co-resource-item__resource-name">
               {isVMAlert && (

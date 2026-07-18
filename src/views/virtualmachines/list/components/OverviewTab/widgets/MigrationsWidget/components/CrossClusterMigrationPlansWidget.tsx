@@ -44,7 +44,6 @@ const CrossClusterMigrationPlansWidget: FC<CrossClusterMigrationPlansWidgetProps
   return (
     <Card
       className="cross-cluster-migration-plans-widget"
-      data-test="cross-cluster-migration-plans-widget"
       isCompact
     >
       <CardHeader

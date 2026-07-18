@@ -15,7 +15,7 @@ const MigrationPendingChanges: FC<MigrationPendingChangesProps> = ({
   const { t } = useKubevirtTranslation();
 
   return (
-    <p data-test-id="vm-migration-pending-changes-message">
+    <p>
       {getMigrationRequiredConditionMessage(t, migrationRequiredCondition)}
     </p>
   );

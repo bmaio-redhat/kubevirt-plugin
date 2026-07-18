@@ -32,7 +32,11 @@ export const TemplatesCatalogDrawer: FC<TemplatesCatalogDrawerProps> = ({ onClos
 
   return (
     <DrawerContextProvider template={template}>
-      <DrawerPanelContent className="template-catalog-drawer" maxSize="37.5rem" minSize="37.5rem">
+      <DrawerPanelContent
+        className="template-catalog-drawer"
+        maxSize="37.5rem"
+        minSize="37.5rem"
+      >
         <DrawerHead>
           <CatalogItemHeader
             className="co-catalog-page__overlay-header"

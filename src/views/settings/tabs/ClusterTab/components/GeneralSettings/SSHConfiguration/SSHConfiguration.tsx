@@ -66,6 +66,7 @@ const SSHConfiguration: FC<SSHConfigurationProps> = ({ newBadge }) => {
 
   return (
     <ExpandSection
+      dataTestID="ssh-configurations"
       searchItemId={CLUSTER_TAB_IDS.sshConfiguration}
       toggleText={t('SSH configurations')}
     >

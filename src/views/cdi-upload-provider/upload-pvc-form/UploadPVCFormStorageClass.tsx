@@ -33,7 +33,6 @@ const UploadPVCFormStorageClass = ({
             'Use optimized access mode & volume mode settings from StorageProfile resource.',
           )}
           data-checked-state={applySP}
-          data-test="apply-storage-provider"
           id="apply-storage-provider"
           isChecked={applySP}
           // isDisabled={!isSPSettingProvided}

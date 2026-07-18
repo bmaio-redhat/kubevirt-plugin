@@ -71,7 +71,6 @@ export const LabelList: FC<LabelListProps> = ({
       ) : (
         <PfLabelGroup
           className="co-label-group"
-          data-test="label-list"
           defaultIsOpen={true}
           numLabels={20}
         >

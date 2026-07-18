@@ -38,7 +38,7 @@ const MigrationsTab: FC<MigrationsTabProps> = ({ duration }) => {
 
   return (
     <Overview>
-      <Card className="kv-monitoring-card" data-test="kv-monitoring-card" isExpanded={isExpanded}>
+      <Card className="kv-monitoring-card" isExpanded={isExpanded}>
         <CardHeader
           className="kv-monitoring-card__header"
           onExpand={() => setIsExpanded((prev) => !prev)}

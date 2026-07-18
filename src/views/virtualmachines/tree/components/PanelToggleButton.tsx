@@ -16,7 +16,10 @@ const PanelToggleButton: FC<PanelToggleButtonProps> = ({ isOpen, toggleDrawer })
 
   return (
     <Tooltip content={isOpen ? t('Close') : t('Open')}>
-      <button className="vms-tree-view__panel-toggle-button" onClick={toggleDrawer}>
+      <button
+        className="vms-tree-view__panel-toggle-button"
+        onClick={toggleDrawer}
+      >
         <SvgIcon />
       </button>
     </Tooltip>

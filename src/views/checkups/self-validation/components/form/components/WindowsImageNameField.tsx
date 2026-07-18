@@ -81,7 +81,6 @@ const WindowsImageNameField: FC<WindowsImageNameFieldProps> = ({
               <Button
                 aria-label={t('Clear selection')}
                 className="win-image-name-select__clear"
-                data-test="win-image-name-clear"
                 icon={<TimesIcon />}
                 onClick={() => setWinImageName('')}
                 variant={ButtonVariant.plain}

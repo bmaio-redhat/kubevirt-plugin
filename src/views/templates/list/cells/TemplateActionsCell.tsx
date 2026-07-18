@@ -24,7 +24,7 @@ const TemplateActionsCell: FC<TemplateActionsCellProps> = ({ row }) => {
   }
 
   return (
-    <VirtualMachineTemplatesActions data-test="template-row-actions" isKebabToggle template={row} />
+    <VirtualMachineTemplatesActions isKebabToggle template={row} />
   );
 };
 

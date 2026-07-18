@@ -26,6 +26,7 @@ const VMActionsConfirmation: FC<VMActionsConfirmationProps> = ({ newBadge }) => 
 
   return (
     <ExpandSection
+      dataTestID="vm-actions-confirmation"
       searchItemId={CLUSTER_TAB_IDS.vmActionsConfirmation}
       toggleText={t('VirtualMachine actions confirmation')}
     >

@@ -43,7 +43,6 @@ const CommonTemplateAlert: FC<CommonTemplateAlertProps> = ({ template }) => {
       title={t('Templates provided by {{providerName}} are not editable.', {
         providerName,
       })}
-      data-test="common-template-alert"
       isInline
       variant={AlertVariant.info}
     >

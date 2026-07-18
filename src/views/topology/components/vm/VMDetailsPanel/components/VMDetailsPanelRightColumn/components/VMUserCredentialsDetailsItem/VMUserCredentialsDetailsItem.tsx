@@ -27,13 +27,11 @@ const VMUserCredentialsDetailsItem: FC<VMUserCredentialsDetailsItemProps> = ({ v
     <>
       <div
         className="topology-vm-details-panel__user-credentials"
-        data-test="details-item-user-credentials-user-name"
       >
         {t('user: {{user}}', { user })}
       </div>
       <ClipboardCopy
         className="topology-vm-details-panel__user-credentials"
-        data-test="SSHDetailsPage-command"
         isReadOnly
       >
         {sshServiceRunning ? command : `ssh ${user}@`}

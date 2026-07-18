@@ -27,7 +27,7 @@ const HideYamlTab: FC<HideYamlTabProps> = ({ newBadge = false }) => {
   };
 
   return (
-    <ExpandSection searchItemId={CLUSTER_TAB_IDS.hideYamlTab} toggleText={t('YAML tab visibility')}>
+    <ExpandSection dataTestID="yaml-tab-visibility" searchItemId={CLUSTER_TAB_IDS.hideYamlTab} toggleText={t('YAML tab visibility')}>
       <SectionWithSwitch
         helpTextIconContent={t(
           'Controls whether non-admin users can access YAML configurations for virtualization objects in the UI (VirtualMachines, VirtualMachineInstances, Templates, DataSources, DataImportCrons, MigrationPolicies, Checkups, and VM Networks).',

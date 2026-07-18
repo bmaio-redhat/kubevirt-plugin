@@ -40,7 +40,6 @@ const VirtualMachineBasicLogViewer: FC<VirtualMachineBasicLogViewerProps> = ({
           <ToolbarContent>
             <ToolbarItem>
               <LogViewerSearch
-                data-test="search-input"
                 minSearchChars={3}
                 placeholder="Search..."
               />

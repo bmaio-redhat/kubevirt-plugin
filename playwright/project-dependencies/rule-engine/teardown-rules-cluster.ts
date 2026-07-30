@@ -58,8 +58,9 @@ export function getClusterTeardownRules(): TeardownRule[] {
             'form-existence-check-',
           ];
 
-          const { items: migrationPolicies } =
-            await apiClient.listResourcesByKind('migrationpolicy');
+          const { items: migrationPolicies } = await apiClient.listResourcesByKind(
+            'migrationpolicy',
+          );
 
           const deletionPromises = migrationPolicies
             .filter((policy) => {

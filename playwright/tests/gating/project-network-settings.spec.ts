@@ -100,8 +100,9 @@ async function assertDefaultNicUsesNetwork(
     })
     .toContain(expectedNetwork);
 
-  const networkName =
-    await vmWizardComputePage.getWizardNetworkInterfaceNetworkName(DEFAULT_NIC_NAME);
+  const networkName = await vmWizardComputePage.getWizardNetworkInterfaceNetworkName(
+    DEFAULT_NIC_NAME,
+  );
   expect(networkName, 'Default NIC must not fall back to Pod networking').not.toBe(
     'Pod networking',
   );

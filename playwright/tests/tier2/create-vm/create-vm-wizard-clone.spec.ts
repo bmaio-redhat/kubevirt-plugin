@@ -54,8 +54,9 @@ test.describe(
 
         await vmWizardNavigationPage.selectCreationMethod('cloneVm');
 
-        const isCloneSelected =
-          await vmWizardNavigationPage.verifyCreationMethodCardSelected('cloneVm');
+        const isCloneSelected = await vmWizardNavigationPage.verifyCreationMethodCardSelected(
+          'cloneVm',
+        );
         expect.soft(isCloneSelected, 'Clone existing VirtualMachine should be selected').toBe(true);
 
         await vmWizardNavigationPage.clickNext();

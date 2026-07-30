@@ -51,8 +51,9 @@ test.describe.serial('Tier1 Template Tests', { tag: [T1_TAG, '@tier1-templates']
 
     apiClient.trackResource('Template', templateName, sharedNs);
 
-    const templateDetailsVerified =
-      await templatesPage.verifyTemplateCreationFromExample('Template details');
+    const templateDetailsVerified = await templatesPage.verifyTemplateCreationFromExample(
+      'Template details',
+    );
     expect.soft(templateDetailsVerified, 'Template details should be visible').toBe(true);
 
     const fedoraVmVerified = await templatesPage.verifyTemplateCreationFromExample('Fedora VM');

@@ -58,7 +58,9 @@ export function getSetupRules(): SetupRule[] {
           try {
             const status = await probe();
             logger.success(
-              `✓ Console responded with HTTP ${status} after ${Math.round((Date.now() - start) / 1000)}s`,
+              `✓ Console responded with HTTP ${status} after ${Math.round(
+                (Date.now() - start) / 1000,
+              )}s`,
             );
             return;
           } catch (err) {
@@ -609,7 +611,9 @@ export function getSetupRules(): SetupRule[] {
         logger.info(
           `📦 Granting test user cluster-level view access (catalog, templates, wizard)...`,
         );
-        const viewBindingName = `test-user-cluster-view-${username.replace(/[^a-z0-9]/gi, '-').toLowerCase()}`;
+        const viewBindingName = `test-user-cluster-view-${username
+          .replace(/[^a-z0-9]/gi, '-')
+          .toLowerCase()}`;
         try {
           await apiClient.createResourceByKind('ClusterRoleBinding', {
             apiVersion: 'rbac.authorization.k8s.io/v1',
@@ -631,7 +635,9 @@ export function getSetupRules(): SetupRule[] {
           `📦 Granting test user cluster-level CDI read access (bootable volumes, datasources)...`,
         );
         const cdiRoleName = 'test-user-cdi-reader';
-        const cdiBindingName = `test-user-cdi-reader-${username.replace(/[^a-z0-9]/gi, '-').toLowerCase()}`;
+        const cdiBindingName = `test-user-cdi-reader-${username
+          .replace(/[^a-z0-9]/gi, '-')
+          .toLowerCase()}`;
         try {
           await apiClient.createResourceByKind('ClusterRole', {
             apiVersion: 'rbac.authorization.k8s.io/v1',

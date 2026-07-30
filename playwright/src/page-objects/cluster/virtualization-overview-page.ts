@@ -14,7 +14,7 @@ export const VmChartType = {
   UNCATEGORIZED: 'Show uncategorized VirtualMachines',
 } as const;
 
-export type VmChartTypeValue = (typeof VmChartType)[keyof typeof VmChartType];
+export type VmChartTypeValue = typeof VmChartType[keyof typeof VmChartType];
 
 export default class VirtualizationOverviewPage extends BasePage {
   private readonly nav: NavigationComponent;

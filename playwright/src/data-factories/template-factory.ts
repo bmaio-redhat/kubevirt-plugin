@@ -324,8 +324,8 @@ objects:
               cores: ${template.cpuCores}
               sockets: ${template.cpuSockets}
               threads: ${template.cpuThreads}${
-                template.dedicatedCpuPlacement ? `\n              dedicatedCpuPlacement: true` : ''
-              }
+      template.dedicatedCpuPlacement ? `\n              dedicatedCpuPlacement: true` : ''
+    }
             devices:
               disks:
                 - disk:
@@ -347,10 +347,8 @@ objects:
             - name: ${template.networkName}
               pod: {}
           terminationGracePeriodSeconds: ${template.terminationGracePeriodSeconds}${
-            template.evictionStrategy
-              ? `\n          evictionStrategy: ${template.evictionStrategy}`
-              : ''
-          }
+      template.evictionStrategy ? `\n          evictionStrategy: ${template.evictionStrategy}` : ''
+    }
           volumes:
             - name: ${template.rootDiskName}
               containerDisk:

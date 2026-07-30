@@ -552,10 +552,7 @@ export class VmListMigrationComponent extends BaseComponent {
   );
   private readonly _vmActionMigrateCompute = this.testId('vm-action-migrate-compute');
 
-  constructor(
-    page: Page,
-    private readonly openVmRowActions: (vmName: string) => Promise<void>,
-  ) {
+  constructor(page: Page, private readonly openVmRowActions: (vmName: string) => Promise<void>) {
     super(page);
   }
 
@@ -638,7 +635,9 @@ export class VmListMigrationComponent extends BaseComponent {
         /* best-effort modal cleanup */
       }
       throw new Error(
-        `completeMigrationWizardWithStorageClass failed: ${error instanceof Error ? error.message : String(error)}`,
+        `completeMigrationWizardWithStorageClass failed: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
       );
     }
   }
@@ -923,7 +922,9 @@ export class VmListMigrationComponent extends BaseComponent {
       );
     } catch (error) {
       throw new Error(
-        `performStorageClassMigration failed for VM "${vmName}": ${error instanceof Error ? error.message : String(error)}`,
+        `performStorageClassMigration failed for VM "${vmName}": ${
+          error instanceof Error ? error.message : String(error)
+        }`,
       );
     }
   }

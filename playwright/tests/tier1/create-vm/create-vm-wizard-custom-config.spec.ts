@@ -36,8 +36,9 @@ test.describe(
         const tilesVisible = await vmWizardNavigationPage.verifyCreationMethodTilesVisible();
         expect.soft(tilesVisible, 'Creation method tiles should be visible').toBe(true);
 
-        const isCustomSelected =
-          await vmWizardNavigationPage.verifyCreationMethodCardSelected('newVm');
+        const isCustomSelected = await vmWizardNavigationPage.verifyCreationMethodCardSelected(
+          'newVm',
+        );
         expect
           .soft(isCustomSelected, 'Custom configuration should be selected by default')
           .toBe(true);

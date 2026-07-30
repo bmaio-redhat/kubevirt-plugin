@@ -250,7 +250,7 @@ export default class NavigationComponent extends BaseComponent {
 
     const visible = await option.isVisible().catch(() => false);
     const text = visible
-      ? ((await option.locator('.pf-v6-c-menu__item-text').textContent())?.trim() ?? null)
+      ? (await option.locator('.pf-v6-c-menu__item-text').textContent())?.trim() ?? null
       : null;
 
     await this.page.keyboard.press('Escape');

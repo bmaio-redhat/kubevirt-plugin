@@ -42,6 +42,6 @@ export function regexFromLiteral(
   literal: string,
   options: string | RegexFromLiteralOptions = 'i',
 ): RegExp {
-  const flags = typeof options === 'string' ? options : (options.flags ?? 'i');
+  const flags = typeof options === 'string' ? options : options.flags ?? 'i';
   return new RegExp(escapeForRegExp(literal), flags);
 }

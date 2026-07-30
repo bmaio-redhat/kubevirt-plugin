@@ -34,8 +34,9 @@ test.describe(
       await test.step('Step 1: Deployment details — select From Template and generate name', async () => {
         await vmWizardNavigationPage.selectCreationMethod('fromTemplate');
 
-        const isTemplateSelected =
-          await vmWizardNavigationPage.verifyCreationMethodCardSelected('fromTemplate');
+        const isTemplateSelected = await vmWizardNavigationPage.verifyCreationMethodCardSelected(
+          'fromTemplate',
+        );
         expect.soft(isTemplateSelected, 'Create from Template should be selected').toBe(true);
 
         await vmWizardNavigationPage.generateVmName();

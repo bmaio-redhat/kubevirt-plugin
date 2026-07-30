@@ -156,6 +156,9 @@ export async function fetchOAuthToken(
   }
 
   throw new Error(
-    `OAuth authorize returned ${resp.statusCode} instead of a redirect. Body: ${resp.body.substring(0, 200)}`,
+    `OAuth authorize returned ${resp.statusCode} instead of a redirect. Body: ${resp.body.substring(
+      0,
+      200,
+    )}`,
   );
 }

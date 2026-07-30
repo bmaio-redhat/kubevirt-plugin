@@ -83,7 +83,7 @@ export function withSafeActions<T extends object>(instance: T): T {
             return (result as Promise<unknown>).catch(async (error: unknown) => {
               const msg =
                 error && typeof error === 'object'
-                  ? ((error as { message?: string }).message ?? String(error))
+                  ? (error as { message?: string }).message ?? String(error)
                   : String(error);
               const label = `${className(target)}.${String(prop)}`;
 

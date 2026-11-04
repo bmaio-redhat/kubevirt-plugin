@@ -6,6 +6,7 @@
 export const ROUTE_VIRTUALIZATION_LANDING_TAG = '@route-virtualization-landing';
 export const ROUTE_VIRTUALIZATION_SETTINGS_TAG = '@route-virtualization-settings';
 export const ROUTE_CATALOG_TAG = '@route-catalog';
+export const ROUTE_VM_WIZARD_TAG = '@route-vm-wizard';
 export const ROUTE_VM_TEMPLATES_TAG = '@route-vm-templates';
 export const ROUTE_MIGRATION_POLICIES_TAG = '@route-migration-policies';
 export const ROUTE_DATASOURCES_TAG = '@route-datasources';

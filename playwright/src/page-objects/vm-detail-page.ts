@@ -67,6 +67,56 @@ export class VmDetailPage extends BasePage {
     await this.page.goto(`${base}/configuration/${section}`, { waitUntil: 'domcontentloaded' });
   }
 
+  async isVmNameVisible(
+    expectedName?: string,
+    timeout: number = TestTimeouts.DEFAULT,
+  ): Promise<boolean> {
+    const title = expectedName
+      ? this.page
+          .getByRole('heading', {
+            level: 1,
+            name: new RegExp(`^${expectedName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`),
+          })
+          .or(
+            this.page.locator('[data-test-id="resource-title"]').filter({ hasText: expectedName }),
+          )
+      : this.page.locator('[data-test-id="resource-title"]');
+    return title
+      .first()
+      .waitFor({ state: 'visible', timeout })
+      .then(() => true)
+      .catch(() => false);
+  }
+
+  async navigateToVirtualMachineDetail(name: string, namespace: string): Promise<void> {
+    await this.openVmAndWaitForDetail(namespace, name);
+  }
+
+  async navigateToConfigurationMetadata(): Promise<void> {
+    await this.navigateToMetadataTab();
+  }
+
+  async clickVmActionsDropdown(): Promise<void> {
+    await this.openActionsMenu();
+  }
+
+  async stopVmFromActionsDropdown(): Promise<void> {
+    const stop = this.page.locator('[data-test-id="vm-action-stop"]').first();
+    if (await stop.isVisible().catch(() => false)) {
+      await this.robustClick(stop);
+      return;
+    }
+    await this.openActionsMenu();
+    const stopItem = this.page.getByRole('menuitem', { name: /^Stop$/i }).first();
+    await stopItem.click();
+  }
+
+  async deleteVm(): Promise<void> {
+    await this.openDeleteDialogFromActions();
+    const modal = this.page.locator('[role="dialog"]').last();
+    await modal.getByRole('button', { name: /^Delete$/i }).click();
+  }
+
   private legacyConfigurationSubTab(innerKey: string): Locator | undefined {
     const labels: Record<string, RegExp> = {
       environment: /^Environment$/i,

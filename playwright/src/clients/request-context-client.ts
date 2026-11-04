@@ -4,6 +4,8 @@ import path from 'path';
 
 import yaml from 'js-yaml';
 
+import type { JsonPatchOp } from '@/data-models/kubernetes-types';
+
 import {
   canRunOc,
   patchConsoleUserSettings,
@@ -1013,6 +1015,280 @@ spec:
    * Wait until live migration finished (VMIM Succeeded or VMI migrationState.completed).
    * Polls frequently so fast migrations are not missed after the VMIM object is removed.
    */
+  async createConfigMapResource(
+    namespace: string,
+    name: string,
+    data: Record<string, string>,
+  ): Promise<void> {
+    await this.applyYaml(
+      yaml.dump({
+        apiVersion: 'v1',
+        kind: 'ConfigMap',
+        metadata: { name, namespace },
+        data,
+      }),
+    );
+  }
+
+  async namespaceExists(name: string): Promise<boolean> {
+    return (await this.getNamespace(name)) != null;
+  }
+
+  async patchConfigMap(name: string, namespace: string, patchOps: JsonPatchOp[]): Promise<void> {
+    const patch = await this.request.patch(
+      this.url(`/api/v1/namespaces/${namespace}/configmaps/${name}`),
+      {
+        data: patchOps,
+        headers: this.proxyHeaders({ 'Content-Type': 'application/json-patch+json' }),
+      },
+    );
+    await this.expectOk(patch, `patch ConfigMap/${name}`);
+  }
+
+  async createSSHKeySecret(namespace: string, secretName: string): Promise<void> {
+    const publicKey =
+      'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCpw-test-key-for-e2e-default-ssh kubevirt-e2e@local';
+    await this.applyYaml(
+      yaml.dump({
+        apiVersion: 'v1',
+        kind: 'Secret',
+        metadata: { name: secretName, namespace },
+        stringData: { 'ssh-publickey': publicKey },
+        type: 'Opaque',
+      }),
+    );
+  }
+
+  async createTemplate(namespace: string, template: Record<string, unknown>): Promise<void> {
+    const body = {
+      ...template,
+      apiVersion: 'template.openshift.io/v1',
+      kind: 'Template',
+      metadata: {
+        ...((template.metadata as Record<string, unknown>) ?? {}),
+        namespace,
+      },
+    };
+    await this.applyYaml(yaml.dump(body));
+  }
+
+  async verifyTemplateCreated(
+    name: string,
+    namespace: string,
+    timeoutMs = TestTimeouts.LONG_OPERATION,
+  ): Promise<{ exists: boolean }> {
+    const start = Date.now();
+    while (Date.now() - start < timeoutMs) {
+      if (await this.openshiftTemplateExists(name, namespace)) {
+        return { exists: true };
+      }
+      await new Promise((r) => setTimeout(r, 2000));
+    }
+    return { exists: false };
+  }
+
+  async secretExists(namespace: string, name: string): Promise<boolean> {
+    return this.resourceExists({
+      apiVersion: 'v1',
+      kind: 'Secret',
+      metadata: { name, namespace },
+    });
+  }
+
+  async getResourceByKind(
+    kind: string,
+    name: string,
+    namespace: string,
+  ): Promise<Record<string, unknown> | null> {
+    const kindMap: Record<string, { apiVersion: string; kind: string }> = {
+      secret: { apiVersion: 'v1', kind: 'Secret' },
+    };
+    const mapped = kindMap[kind.toLowerCase()];
+    if (!mapped) {
+      return null;
+    }
+    const get = await this.request.get(
+      this.url(
+        resourceInstancePath({
+          ...mapped,
+          metadata: { name, namespace },
+        }),
+      ),
+      { headers: this.proxyHeaders() },
+    );
+    if (!get.ok()) {
+      return null;
+    }
+    return (await get.json()) as Record<string, unknown>;
+  }
+
+  async getVmDiskBus(
+    namespace: string,
+    vmName: string,
+    diskName: string,
+  ): Promise<string | undefined> {
+    const vm = (await this.getVirtualMachine(namespace, vmName)) as {
+      spec?: {
+        template?: {
+          spec?: {
+            domain?: { devices?: { disks?: Array<{ name?: string; disk?: { bus?: string } }> } };
+          };
+        };
+      };
+    } | null;
+    const disks = vm?.spec?.template?.spec?.domain?.devices?.disks ?? [];
+    const disk = disks.find((d) => d.name === diskName);
+    return disk?.disk?.bus;
+  }
+
+  async getVirtualMachineSnapshot(
+    namespace: string,
+    name: string,
+  ): Promise<Record<string, unknown> | null> {
+    const get = await this.request.get(
+      this.url(
+        resourceInstancePath({
+          apiVersion: 'snapshot.kubevirt.io/v1beta1',
+          kind: 'VirtualMachineSnapshot',
+          metadata: { name, namespace },
+        }),
+      ),
+      { headers: this.proxyHeaders() },
+    );
+    if (!get.ok()) {
+      return null;
+    }
+    return (await get.json()) as Record<string, unknown>;
+  }
+
+  /** No-op registry — wizard specs call this; namespace teardown is handled by fixtures. */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- cleanup registry hook for wizard specs
+  trackResource(_type: string, _name: string, _namespace?: string): void {}
+
+  async getConfigMap(
+    name: string,
+    namespace: string,
+  ): Promise<{ data?: Record<string, string> } | null> {
+    const get = await this.request.get(
+      this.url(`/api/v1/namespaces/${namespace}/configmaps/${name}`),
+      { headers: this.proxyHeaders() },
+    );
+    if (!get.ok()) {
+      return null;
+    }
+    return (await get.json()) as { data?: Record<string, string> };
+  }
+
+  async mergePatchResource(
+    group: string,
+    version: string,
+    plural: string,
+    name: string,
+    patchBody: Record<string, unknown>,
+    namespace?: string,
+  ): Promise<void> {
+    const base = group ? `/apis/${group}/${version}` : `/api/${version}`;
+    const path = namespace
+      ? `${base}/namespaces/${namespace}/${plural}/${name}`
+      : `${base}/${plural}/${name}`;
+    const patch = await this.request.patch(this.url(path), {
+      data: patchBody,
+      headers: this.proxyHeaders({ 'Content-Type': 'application/merge-patch+json' }),
+    });
+    await this.expectOk(patch, `merge-patch ${plural}/${name}`);
+  }
+
+  async createVmFromTemplate(
+    templateName: string,
+    vmName: string,
+    namespace: string,
+    templateNamespace = 'openshift',
+    startVm = true,
+  ): Promise<string> {
+    const templatePath = resourceInstancePath({
+      apiVersion: 'template.openshift.io/v1',
+      kind: 'Template',
+      metadata: { name: templateName, namespace: templateNamespace },
+    });
+    const templateRes = await this.request.get(this.url(templatePath), {
+      headers: this.proxyHeaders(),
+    });
+    await this.expectOk(templateRes, `GET Template/${templateName}`);
+    const template = (await templateRes.json()) as Record<string, unknown> & {
+      metadata?: Record<string, unknown>;
+      parameters?: Array<{ name: string; value?: string }>;
+    };
+
+    template.metadata = { ...(template.metadata ?? {}), namespace };
+    delete template.metadata.resourceVersion;
+    delete template.metadata.uid;
+
+    const nameParam = template.parameters?.find((p) => p.name === 'NAME');
+    if (nameParam) {
+      nameParam.value = vmName;
+    }
+
+    const processedRes = await this.request.post(
+      this.url(`/apis/template.openshift.io/v1/namespaces/${namespace}/processedtemplates`),
+      { data: template, headers: this.proxyHeaders() },
+    );
+    await this.expectOk(processedRes, `POST processedtemplates for ${templateName}`);
+    const processed = (await processedRes.json()) as { objects?: Array<Record<string, unknown>> };
+    const vmSpec = processed.objects?.[0];
+    if (!vmSpec) {
+      throw new Error(`processedtemplates returned no objects for ${templateName}`);
+    }
+
+    const spec = (vmSpec.spec ?? {}) as Record<string, unknown>;
+    spec.runStrategy = startVm ? 'Always' : 'Halted';
+    vmSpec.spec = spec;
+
+    await this.createOrReplace(vmSpec as unknown as K8sObject);
+    const createdName = (vmSpec.metadata as { name?: string } | undefined)?.name ?? vmName;
+    return createdName;
+  }
+
+  async listResources(
+    group: string,
+    version: string,
+    plural: string,
+    namespace?: string,
+  ): Promise<{ items?: unknown[] }> {
+    const base = group ? `/apis/${group}/${version}` : `/api/${version}`;
+    const path = namespace ? `${base}/namespaces/${namespace}/${plural}` : `${base}/${plural}`;
+    const res = await this.request.get(this.url(path), { headers: this.proxyHeaders() });
+    await this.expectOk(res, `GET ${path}`);
+    return (await res.json()) as { items?: unknown[] };
+  }
+
+  async verifyVmCreated(
+    vmName: string,
+    namespace: string,
+    timeoutMs = TestTimeouts.LONG_OPERATION,
+  ): Promise<{ exists: boolean }> {
+    const start = Date.now();
+    while (Date.now() - start < timeoutMs) {
+      const vm = await this.getVirtualMachine(namespace, vmName);
+      if (vm) {
+        return { exists: true };
+      }
+      await new Promise((r) => setTimeout(r, 3000));
+    }
+    return { exists: false };
+  }
+
+  async waitForVmDeleted(vmName: string, namespace: string, timeoutMs = 60_000): Promise<boolean> {
+    try {
+      await pollUntil(async () => !(await this.virtualMachineExists(vmName, namespace)), {
+        message: `VM ${namespace}/${vmName} should be deleted`,
+        timeout: timeoutMs,
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   async waitForVmiMigrationComplete(
     namespace: string,
     vmiName: string,

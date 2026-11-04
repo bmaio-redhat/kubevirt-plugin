@@ -22,3 +22,7 @@ export const ADMIN_ONLY_TAG = '@admin-only';
 
 /** Runs in non-priv tier lanes; usually paired with `@tier1` / `@tier2` (incl. UI create flows). */
 export const NON_PRIV_TAG = '@non-priv';
+
+export const NETWORKING_TAG_LABEL = 'networking';
+export const AUTO_LABELS_TAG = '@auto-labels';
+export const AUTO_LABELS_FEATURE = 'Auto-Applied Labels';

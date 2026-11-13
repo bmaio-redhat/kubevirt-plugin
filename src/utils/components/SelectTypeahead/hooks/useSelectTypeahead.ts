@@ -128,8 +128,11 @@ export const useSelectTypeahead = ({
   };
   const onOpenChange = (open: boolean): void => {
     if (!open) {
+      // Only close — do not sync input from selectedValue here. PatternFly can call
+      // onOpenChange(false) in the same turn as onSelect, while this closure still
+      // sees the previous selectedValue and would wipe a just-selected value.
+      // The useEffect below restores input from selectedValue once the menu is closed.
       closeMenu();
-      setInputValue(getSelectedDisplayValue(selectedValue, options));
     }
   };
 

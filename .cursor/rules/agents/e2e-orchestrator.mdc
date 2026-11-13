@@ -21,14 +21,15 @@ Coordinates QE automation for the Playwright test suite that lives under `playwr
 
 ## Test Structure
 
-Tests are organized by tiers. Each tier maps to a Playwright project and has its own test directory.
+Specs use **route-based folders** under `playwright/tests/`. Playwright **projects** select suites by tags (`grep` in `playwright.config.ts`).
 
-| Tier | Directory | Fixture | Project | Tags |
-|------|-----------|---------|---------|------|
-| Gating | `tests/gating/` | `gating-fixture` | `Gating` | `@gating` |
-| Tier 1 | `tests/tier1/<feature>/` | Per-feature fixture | `Tier1` | `@tier1` |
-| Tier 2 | `tests/tier2/<feature>/` | Per-feature fixture | `Tier2` | `@tier2` |
-| Settings | `tests/settings/` | `settings-fixture` | `Settings` | `@cnv-settings` |
+| Project | Route folders (examples) | Fixture | Tags |
+|---------|--------------------------|---------|------|
+| Gating | `virtualization-landing/`, `virtual-machines/creation/`, … | `gating-fixture` | `@gating` |
+| Tier 1 | `bootable-volumes/`, `vm-templates/`, `virtual-machines/detail/`, … | Per-feature | `@tier1` |
+| Tier 2 | `virtualization-landing/welcome-modal`, integration specs | Per-feature | `@tier2` |
+| Settings | `virtualization-settings/` | `settings-fixture` | `@cnv-settings` |
+| Migrations | `virtual-machines/migrations/` | `migration-fixture` / `vm-tabs-fixture` | `@migration` |
 
 ### Architecture
 
@@ -61,10 +62,10 @@ RequestContextClient (clients/request-context-client.ts) → console proxy → K
 ```
 playwright/
 ├── tests/
-│   ├── gating/                    # Gating specs
-│   ├── tier1/<feature>/           # Tier 1 specs (grouped by feature)
-│   ├── tier2/<feature>/           # Tier 2 specs (grouped by feature)
-│   └── settings/                  # Settings specs
+│   ├── virtual-machines/          # list, detail, creation, migrations
+│   ├── vm-wizard/, vm-templates/, bootable-volumes/, …
+│   ├── virtualization-settings/   # @cnv-settings
+│   └── api/                       # @api contract tests
 ├── src/
 │   ├── components/                # UI components (extend BaseComponent)
 │   │   ├── shared/                # Base classes

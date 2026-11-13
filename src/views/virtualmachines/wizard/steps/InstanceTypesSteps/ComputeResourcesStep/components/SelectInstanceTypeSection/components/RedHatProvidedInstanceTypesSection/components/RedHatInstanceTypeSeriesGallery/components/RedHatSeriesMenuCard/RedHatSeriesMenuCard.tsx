@@ -1,9 +1,9 @@
-import classNames from 'classnames';
-import React, { FC, useMemo } from 'react';
+import React, { type FC, useMemo } from 'react';
 import { useWatch } from 'react-hook-form';
+import classNames from 'classnames';
 
 import { instanceTypeSeriesNameMapper } from '@kubevirt-utils/components/AddBootableVolumeModal/components/VolumeMetadata/components/InstanceTypeDrilldownSelect/utils/constants';
-import { RedHatInstanceTypeSeries } from '@kubevirt-utils/components/AddBootableVolumeModal/components/VolumeMetadata/components/InstanceTypeDrilldownSelect/utils/types';
+import { type RedHatInstanceTypeSeries } from '@kubevirt-utils/components/AddBootableVolumeModal/components/VolumeMetadata/components/InstanceTypeDrilldownSelect/utils/types';
 import {
   getSeriesLabel,
   getSeriesSymbol,
@@ -33,48 +33,52 @@ const RedHatSeriesMenuCard: FC<RedHatSeriesMenuCardProps> = ({ rhSeriesItem }) =
 
   const { classDisplayNameAnnotation, descriptionAnnotation, seriesName, sizes } = rhSeriesItem;
 
-  const { Icon, seriesLabel } = instanceTypeSeriesNameMapper[seriesName] || {};
+  const seriesMapperEntry = instanceTypeSeriesNameMapper[seriesName] as
+    | (typeof instanceTypeSeriesNameMapper)[keyof typeof instanceTypeSeriesNameMapper]
+    | undefined;
+  const { Icon, seriesLabel } = seriesMapperEntry ?? {};
 
   const isSelectedSeries = useMemo(
-    () => seriesName === selectedSeries,
+    () => seriesName === String(selectedSeries ?? ''),
     [selectedSeries, seriesName],
   );
 
   const defaultSeriesLabel = useMemo(() => getSeriesLabel(seriesName, t), [seriesName, t]);
 
-  const handleSeriesClick = () => {
-    if (seriesName === selectedSeries) {
+  const handleSeriesClick = (): void => {
+    if (seriesName === String(selectedSeries ?? '')) {
       return;
     }
 
     const standardSizes = seriesHasHugepagesVariant(seriesName)
-      ? sizes?.filter((s) => !is1GiInstanceType(s.sizeLabel))
+      ? sizes?.filter((size) => !is1GiInstanceType(size.sizeLabel))
       : sizes;
     const defaultSize = (standardSizes?.[0] ?? sizes?.[0])?.sizeLabel;
     setValue(CREATE_VM_FORM_FIELDS_INSTANCE_TYPE_DATA.SELECTED_SERIES, seriesName);
     setValue(CREATE_VM_FORM_FIELDS_INSTANCE_TYPE_DATA.SELECTED_SIZE, defaultSize);
+    // InstanceType name is series.size (e.g. u1.medium) — series alone has no memory/CPU.
     setValue(CREATE_VM_FORM_FIELDS_INSTANCE_TYPE_DATA.SELECTED_INSTANCE_TYPE, {
-      name: seriesName,
+      name: defaultSize ? `${seriesName}.${defaultSize}` : seriesName,
       namespace: null,
     });
   };
 
   const card = (
     <Card
+      aria-pressed={isSelectedSeries}
       className={classNames(
         'instance-type-series-menu-card__toggle-card',
         isSelectedSeries && 'selected',
       )}
+      data-test={`instance-type-series-${seriesName}`}
+      isCompact
+      onClick={handleSeriesClick}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           handleSeriesClick();
         }
       }}
-      aria-pressed={isSelectedSeries}
-      data-test={`instance-type-series-${seriesName}`}
-      isCompact
-      onClick={handleSeriesClick}
       role="button"
       tabIndex={0}
     >

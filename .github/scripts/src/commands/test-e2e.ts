@@ -7,8 +7,8 @@
  *   /test-e2e tier1
  *   /test-e2e tier2
  *   /test-e2e suite
- *   /test-e2e tier1 playwright/tests/tier1/foo.spec.ts
- *   /test-e2e playwright/tests/tier1/foo.spec.ts
+ *   /test-e2e tier1 playwright/tests/bootable-volumes/foo.spec.ts
+ *   /test-e2e playwright/tests/bootable-volumes/foo.spec.ts
  *   /test-e2e gating -g MyTestName
  *   /test-e2e -g "creates a bootable volume"
  *   /test-e2e tier1 -g "VM Search Language"
@@ -69,8 +69,8 @@ const main = async (): Promise<void> => {
           '- `/test-e2e tier1`',
           '- `/test-e2e tier2`',
           '- `/test-e2e suite`',
-          '- `/test-e2e tier1 playwright/tests/tier1/foo.spec.ts`',
-          '- `/test-e2e playwright/tests/tier1/bootable-volumes/bootable-volumes.spec.ts`',
+          '- `/test-e2e tier1 playwright/tests/bootable-volumes/foo.spec.ts`',
+          '- `/test-e2e playwright/tests/bootable-volumes/bootable-volumes.spec.ts`',
           '- `/test-e2e gating -g MyTestName`',
           '- `/test-e2e -g "creates a bootable volume"`',
           '- `/test-e2e tier1 -g "VM Search Language"`',

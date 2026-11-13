@@ -7,10 +7,13 @@ export const VALID_TEST_E2E_PROJECTS = [
   'auto',
   'gating',
   'tier1',
+  'tier1-nonpriv',
   'tier2',
+  'tier2-nonpriv',
   'suite',
   'features',
   'settings',
+  'migrations',
   'api',
   'all',
 ] as const;

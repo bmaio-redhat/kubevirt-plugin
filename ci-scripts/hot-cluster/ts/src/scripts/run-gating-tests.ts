@@ -18,10 +18,13 @@ const PLAYWRIGHT_PROJECT_BY_TEST_PROJECT: Record<string, string> = {
   api: 'API',
   auto: 'auto',
   gating: 'Gating',
+  migrations: 'Migrations',
   settings: 'Settings',
   suite: 'suite',
   tier1: 'Tier1',
+  'tier1-nonpriv': 'Tier1NonPriv',
   tier2: 'Tier2',
+  'tier2-nonpriv': 'Tier2NonPriv',
 };
 
 /** Cypress (release) TEST_PROJECT → spec file. `features` is Cypress's Tier1 suite. */
@@ -88,12 +91,15 @@ const main = async (): Promise<void> => {
           'Omit auto and pick a suite to run an entire project.',
       );
     }
-    console.log(
-      playwrightProject === 'auto'
-        ? `Running Playwright without --project filter with args: ${testArgs.join(' ')}`
-        : `Running Playwright project '${playwrightProject}'` +
-            (testArgs.length > 0 ? ` with args: ${testArgs.join(' ')}` : ''),
-    );
+    let runMessage = `Running Playwright project '${playwrightProject}'`;
+    if (playwrightProject === 'auto') {
+      runMessage = `Running Playwright without --project filter with args: ${testArgs.join(' ')}`;
+    } else if (testArgs.length > 0) {
+      runMessage = `Running Playwright project '${playwrightProject}' with args: ${testArgs.join(
+        ' ',
+      )}`;
+    }
+    console.log(runMessage);
     execFileSync('./playwright-runner-hc-e2e.sh', [playwrightProject, ...testArgs], {
       cwd: repoRoot,
       stdio: 'inherit',

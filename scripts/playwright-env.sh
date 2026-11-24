@@ -51,8 +51,19 @@ playwright_bootstrap_ci_env() {
   unset REUSE_STORAGE_STATE
 }
 
+# Datadog Test Optimization: preload dd-trace in the Playwright process and its workers.
+# Runs after dotenv so an inline or .env value (e.g. DD_CIVISIBILITY_ENABLED=false) wins.
+playwright_enable_datadog_ci() {
+  export DD_CIVISIBILITY_ENABLED="${DD_CIVISIBILITY_ENABLED:-true}"
+  case " ${NODE_OPTIONS:-} " in
+    *" -r dd-trace/ci/init "* | *" --require dd-trace/ci/init "*) ;;
+    *) export NODE_OPTIONS="-r dd-trace/ci/init${NODE_OPTIONS:+ ${NODE_OPTIONS}}" ;;
+  esac
+}
+
 playwright_bootstrap_env() {
   playwright_source_dotenv "${1:-.env}"
+  playwright_enable_datadog_ci
   playwright_bootstrap_ci_env
   if [[ "${IS_LOCAL:-0}" == "1" || "${IS_LOCAL:-}" == "true" ]]; then
     playwright_apply_local_console_lane

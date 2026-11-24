@@ -48,15 +48,19 @@ case "${PROJECT}" in
     ;;
   gating | Gating)
     PROJECT="Gating"
+    export PLAYWRIGHT_JUNIT_SUITE_NAME="Gating"
     ;;
   tier1 | t1 | Tier1)
     PROJECT="Tier1"
+    export PLAYWRIGHT_JUNIT_SUITE_NAME="Tier1"
     ;;
   tier2 | t2 | Tier2)
     PROJECT="Tier2"
+    export PLAYWRIGHT_JUNIT_SUITE_NAME="Tier2"
     ;;
   tier1-nonpriv | t1-nonpriv | Tier1NonPriv)
     PROJECT="Tier1NonPriv"
+    export PLAYWRIGHT_JUNIT_SUITE_NAME="Tier1NonPriv"
     export NON_PRIV=1
     export TEST_USERNAME="${TEST_USERNAME:-test}"
     export TEST_PASSWORD="${TEST_PASSWORD:-test}"
@@ -65,6 +69,7 @@ case "${PROJECT}" in
     ;;
   tier2-nonpriv | t2-nonpriv | Tier2NonPriv)
     PROJECT="Tier2NonPriv"
+    export PLAYWRIGHT_JUNIT_SUITE_NAME="Tier2NonPriv"
     export NON_PRIV=1
     export TEST_USERNAME="${TEST_USERNAME:-test}"
     export TEST_PASSWORD="${TEST_PASSWORD:-test}"

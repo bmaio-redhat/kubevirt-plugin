@@ -12,6 +12,7 @@ jq '
     "playwright": .devDependencies["playwright"],
     "allure-js-commons": .devDependencies["allure-js-commons"],
     "allure-playwright": .devDependencies["allure-playwright"],
+    "dd-trace": .devDependencies["dd-trace"],
     "dotenv": .devDependencies["dotenv"],
     "typescript": .devDependencies["typescript"],
     "ts-node": .devDependencies["ts-node"],

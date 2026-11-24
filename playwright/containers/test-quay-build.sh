@@ -86,6 +86,7 @@ if [ "$SMOKE_TEST" = "1" ]; then
         allure --version
         test -f /app/playwright.config.ts
         node -e "require(\"allure-playwright\"); require(\"@playwright/test\"); console.log(\"npm deps OK\")"
+        node -e "console.log(require.resolve(\"dd-trace/ci/init\"))"
     '
     echo "✓ Smoke test OK"
     echo ""

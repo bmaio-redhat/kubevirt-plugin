@@ -23,7 +23,7 @@ playwright/containers/run-tests-container.sh show-report
 | Base      | `mcr.microsoft.com/playwright:v1.63.0-noble` — **must match** `@playwright/test` in root `package.json` |
 | CLI       | `oc`, `kubectl` (`virtctl` is on the Jenkins agent, not in the image)                                   |
 | Reports   | Java 17 + `allure-commandline` for Jenkins / local `allure generate`                                    |
-| npm       | Slim install: Playwright + Allure + `js-yaml` only (no webpack/Jest/React)                              |
+| npm       | Slim install: Playwright + Allure + `dd-trace` + `js-yaml` (no webpack/Jest/React)                      |
 
 ## Build
 

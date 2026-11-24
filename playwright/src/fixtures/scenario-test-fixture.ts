@@ -58,6 +58,12 @@ const _test = base.extend<Fixtures, WorkerFixtures>({
       if (testInfo.titlePath[0]) {
         testInfo.annotations.push({ description: testInfo.titlePath[0], type: 'suite' });
       }
+      // Datadog CI Visibility: dd-trace sets `test.suite` to the spec path, so expose the
+      // configured Playwright project (Gating, Tier1, ...) as its own tag instead.
+      testInfo.annotations.push({
+        description: testInfo.project.name,
+        type: 'DD_TAGS[test.project]',
+      });
       try {
         const { allure } = await import('allure-playwright');
         if (allure) {

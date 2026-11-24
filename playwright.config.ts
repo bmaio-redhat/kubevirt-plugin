@@ -42,7 +42,13 @@ function getReporterConfig(resultsDir: string): ReporterDescription[] {
   }
 
   const junitFile = path.resolve(repoRoot, 'junit-results', 'junit.xml');
-  return [ciDebugHarness, ['list'], allureReporter, ['junit', { outputFile: junitFile }], htmlReporter];
+  return [
+    ciDebugHarness,
+    ['list'],
+    allureReporter,
+    ['junit', { outputFile: junitFile }],
+    htmlReporter,
+  ];
 }
 
 const baseURL = EnvVariables.webConsoleUrl;

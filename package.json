@@ -85,6 +85,7 @@
     "allure-playwright": "^3.10.2",
     "copy-webpack-plugin": "^11.0.0",
     "css-loader": "^6.11.0",
+    "dd-trace": "^5.137.0",
     "dotenv": "^17.4.2",
     "entities": "^4.5.0",
     "eslint": "^8.57.1",
